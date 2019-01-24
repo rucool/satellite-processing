@@ -1,5 +1,7 @@
+basemap==1.2.0
+cartopy==0.16.0
+matplotlib==3.0.1
 netCDF4==1.4.0
 numpy==1.15.4
-basemap==1.2.0
-matplotlib==3.0.1
-cartopy==0.16.0
+pandas==0.23.4
+xarray==0.10.9

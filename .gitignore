@@ -1,2 +1,4 @@
 # Pycharm files
 *.pyc
+*.xml
+*.iml

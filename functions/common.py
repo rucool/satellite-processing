@@ -1,0 +1,134 @@
+#! /usr/bin/env python
+
+from datetime import timedelta
+import numbers
+import numpy as np
+import os
+import xarray as xr
+
+
+def create_dir(new_dir):
+    # create new directory if it doesn't exist
+    if not os.path.isdir(new_dir):
+        try:
+            os.makedirs(new_dir)
+        except OSError:
+            if os.path.exists(new_dir):
+                pass
+            else:
+                raise
+
+
+def append_satellite_sst_data(sat_nc_file, buoylat, buoylon, radius, method, sst_varname):
+    satdata = xr.open_dataset(sat_nc_file, mask_and_scale=False)
+    if method == 'sport':
+        satlon = satdata['lon_0'].values - 360
+        satlat = satdata['lat_0'].values
+    else:
+        satlon = satdata['lon'].values
+        satlat = satdata['lat'].values
+
+    # select data near the buoy
+    lon_ind = np.logical_and(satlon > buoylon - 2, satlon < buoylon + 2)
+    lat_ind = np.logical_and(satlat > buoylat - 2, satlat < buoylat + 2)
+    if method == 'daily_avhrr':
+        satsst = np.squeeze(satdata[sst_varname][:, :, lat_ind, lon_ind])
+        land_mask = satdata['mask'][lat_ind, lon_ind]  # exclude data over land
+        satsst.values[land_mask.values == 1] = np.nan
+        satsst.values[satsst == satdata[sst_varname]._FillValue] = np.nan  # turn fill values to nans
+        lonx, laty = np.meshgrid(satlon[lon_ind], satlat[lat_ind])
+    elif method == 'cold_sport':
+        satsst = np.squeeze(satdata[sst_varname][:, lon_ind, lat_ind])
+        satsst.values[satsst == satdata[sst_varname]._FillValue] = np.nan  # turn fill values to nans
+        laty, lonx = np.meshgrid(satlat[lat_ind], satlon[lon_ind])
+    elif method == 'sport':
+        satsst = np.squeeze(satdata[sst_varname][lat_ind, lon_ind])
+        satsst.values[satsst == satdata[sst_varname]._FillValue] = np.nan  # turn fill values to nans
+        satsst.values[satsst == -9999] = np.nan
+        satsst.values = satsst.values - 273.15  # convert K to C
+        lonx, laty = np.meshgrid(satlon[lon_ind], satlat[lat_ind])
+    elif method == 'nrel':
+        satsst = np.squeeze(satdata[sst_varname][lon_ind, lat_ind])
+        satsst.values[satsst == satdata[sst_varname]._FillValue] = np.nan  # turn fill values to nans
+        laty, lonx = np.meshgrid(satlat[lat_ind], satlon[lon_ind])
+
+    d = haversine_dist(buoylon, buoylat, lonx, laty)
+
+    # define the distance envelope and find the closest data point(s)
+    if isinstance(radius, numbers.Number):
+        dist_satsst = satsst.values[d <= radius]
+        if check_nans(dist_satsst) == 'valid':
+            value = np.nanmean(satsst.values[d <= radius])
+        else:
+            value = np.nan
+
+    elif radius == 'closest':
+        dist_satsst = satsst.values[d == np.nanmin(d)]
+        if check_nans(dist_satsst) == 'valid':
+            d[np.isnan(satsst.values)] = np.nan  # turn distance to nan if the value at that location is nan
+            value = np.nanmean(satsst.values[d == np.nanmin(d)])
+        else:
+            value = np.nan
+
+    elif 'closestwithin' in radius:
+        dist = np.float(radius.split('closestwithin')[-1])
+        dist_satsst = satsst.values[d <= dist]
+        if check_nans(dist_satsst) == 'valid':
+            d[np.isnan(satsst.values)] = np.nan  # turn distance to nan if the value at that location is nan
+            value = np.nanmean(satsst.values[d == np.nanmin(d)])
+        else:
+            value = np.nan
+
+    else:
+        print('Invalid SST averaging option provided.')
+
+    satdata.close()
+    return value
+
+
+def check_nans(data_array):
+    if sum(np.isnan(data_array)) != len(data_array):
+        status = 'valid'
+    else:
+        status = 'all_nans'
+
+    return status
+
+
+def get_buoy_data(buoy_name, all_years, t0, t1):
+    # get buoy SST for entire time range
+    buoy_dict = {'t': np.array([], dtype='datetime64[ns]'), 'sst': np.array([], dtype='float32'), 'sst_units': '',
+                 'lon': '', 'lat': ''}
+    for y in all_years:
+        buoy_fname = 'h'.join((buoy_name, str(y)))
+        buoydap = 'https://dods.ndbc.noaa.gov/thredds/dodsC/data/stdmet/{}/{}{}'.format(buoy_name, buoy_fname, '.nc')
+        try:
+            ds = xr.open_dataset(buoydap, mask_and_scale=False)
+            ds = ds.sel(time=slice(t0, t1 + timedelta(days=1)))
+            if len(ds['time']) > 0:
+                ds_sst = np.squeeze(ds['sea_surface_temperature'].values)
+                ds_sst[ds_sst == ds['sea_surface_temperature']._FillValue] = np.nan  # convert fill values to nans
+                buoy_dict['t'] = np.append(buoy_dict['t'], ds['time'].values)
+                buoy_dict['sst'] = np.append(buoy_dict['sst'], ds_sst)
+                buoy_dict['sst_units'] = ds['sea_surface_temperature'].units
+                buoy_dict['lon'] = ds['longitude'].values[0]
+                buoy_dict['lat'] = ds['latitude'].values[0]
+        except OSError:
+            print('File does not exist: {}'.format(buoydap))
+
+    return buoy_dict
+
+
+def haversine_dist(blon, blat, slon, slat):
+    # return distance (km) from one lon/lat to another (or an entire set)
+    R = 6373.0
+    blon = blon*np.pi/180
+    blat = blat*np.pi/180
+    slon = slon*np.pi/180
+    slat = slat*np.pi/180
+    dlon = slon-blon
+    dlat = slat-blat
+    a = np.sin(dlat/2)**2+np.cos(blat)*np.cos(slat)*np.sin(dlon/2)**2
+    c = 2*np.arctan2(np.sqrt(a), np.sqrt(1-a))
+    distance = R*c
+    return distance
