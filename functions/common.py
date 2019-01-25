@@ -97,7 +97,7 @@ def check_nans(data_array):
 
 def get_buoy_data(buoy_name, all_years, t0, t1):
     # get buoy SST for entire time range
-    buoy_dict = {'t': np.array([], dtype='datetime64[ns]'), 'sst': np.array([], dtype='float32'), 'sst_units': '',
+    buoy_dict = {'t': np.array([], dtype='datetime64[ns]'), 'sst': np.array([]), 'sst_units': '',
                  'lon': '', 'lat': ''}
     for y in all_years:
         buoy_fname = 'h'.join((buoy_name, str(y)))
@@ -132,3 +132,18 @@ def haversine_dist(blon, blat, slon, slat):
     c = 2*np.arctan2(np.sqrt(a), np.sqrt(1-a))
     distance = R*c
     return distance
+
+
+def statistics(observations, predictions):
+    meano = round(np.mean(observations), 2)
+    meanp = round(np.mean(predictions), 2)
+    sdo = round(np.std(observations), 2)
+    sdp = round(np.std(predictions), 2)
+
+    # satellite minus buoy (predictions minus observations)
+    diff = predictions - observations
+    diffx = [round(x, 2) for x in diff]
+    rmse = round(np.sqrt(np.mean(diff ** 2)), 2)
+    n = len(observations)
+
+    return meano, meanp, sdo, sdp, diffx, rmse, n

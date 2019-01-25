@@ -44,7 +44,7 @@ def plot_buoy_full(axis, fbuoy_df, buoy):
 
 
 def plot_buoy_daily(axis, dbuoy_df):
-    axis.plot(dbuoy_df['time_plt'], dbuoy_df['sst'], 'o', markerfacecolor='black', markeredgecolor='black',
+    axis.plot(dbuoy_df['time_plt'], dbuoy_df['buoy_sst_mean'], 'o', markerfacecolor='black', markeredgecolor='black',
               markersize=4, color='black', linestyle='-', lw=.75, label='Daily Buoy Mean')
     return axis
 
@@ -76,8 +76,10 @@ def main(t0, t1, buoy, avgrad, sDir, models):
     if isinstance(t1, int):  # if t1 is integer, redefine as t0+[t1 days]
         t1 = t0+timedelta(days=t1)
 
-    t0 = t0.replace(hour=0, minute=0, second=0, microsecond=0)
-    t1 = t1.replace(hour=0, minute=0, second=0, microsecond=0)
+    # the start date and end dates should be the day before the requested date, because the data from the previous day
+    # are used for the model
+    t0 = t0.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+    t1 = t1.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
 
     # define array of times
     times = pd.to_datetime(np.arange(t0, t1+timedelta(days=1), timedelta(days=1)))
@@ -91,6 +93,7 @@ def main(t0, t1, buoy, avgrad, sDir, models):
     buoy_full = pd.DataFrame(data={'time': buoy_dict['t'], 'sst': buoy_dict['sst']})
     buoy_full.drop_duplicates(inplace=True)  # buoy file 9999 contains the same data found in other files
     buoy_daily = buoy_full.resample('d', on='time').mean().dropna(how='all').reset_index()
+    buoy_daily.rename(columns={'sst': 'buoy_sst_mean'}, inplace=True)
     # change day to the next day at 00:00 for plotting
     buoy_daily['time_plt'] = buoy_daily['time'].map(lambda t: t + timedelta(days=1))
     if len(buoy_daily['time_plt']) == 0:

@@ -5,13 +5,14 @@ Created on Jan 17 2019 by Lori Garzio
 @usage
 sDir: location to save plots
 avgrad: radius around the buoy from which to grab satellite data. options: x (average all data within radius x km of
-the buoy), 'closest' (grabs the closest data point), 'closestiwithinx' (get the closest non-nan measurement as long as
+the buoy), 'closest' (grabs the closest data point), 'closestwithinx' (get the closest non-nan measurement as long as
 it is within x km of the buoy
 start: list of start times. options: date, int (if int, looks at t1 back t0 days)
 end: list of end times. options: date, int (if int, looks at t0 forward t1 days), 'today', 'yesterday'
 """
 
 import datetime as dt
+import pandas as pd
 import scripts
 
 
@@ -44,8 +45,16 @@ else:
     start_dates = [start]
     end_dates = [end]
 
-
+headers = ['buoy', 'year-month', 'mean_buoy', 'sd_buoy', 'mean_nrel', 'sd_nrel', 'RMSE', 'n', 'diff (sat-buoy)']
+summary = []
 for b in buoys:
     print('\nBuoy: {}'.format(b))
     for startdt, enddt in zip(start_dates, end_dates):
-        scripts.sat_buoy_comparison_nrel.main(startdt, enddt, b, avgrad, sDir)
+        [mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n] = scripts.sat_buoy_comparison_nrel.main(startdt, enddt,
+                                                                                                        b, avgrad, sDir)
+        if mean_buoy:
+            year_month = ''.join((startdt.split('-')[-1], startdt.split('-')[0]))
+            summary.append([b, year_month, mean_buoy, sd_buoy, mean_nrel, sd_nrel, rmse, n, diff])
+
+sdf = pd.DataFrame(summary, columns=headers)
+sdf.to_csv('{}/{}/NREL_buoy_comparison.csv'.format(sDir, 'NREL'), index=False)
