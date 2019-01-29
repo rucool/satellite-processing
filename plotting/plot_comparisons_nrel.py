@@ -47,14 +47,25 @@ else:
 
 headers = ['buoy', 'year-month', 'mean_buoy', 'sd_buoy', 'mean_nrel', 'sd_nrel', 'RMSE', 'n', 'diff (sat-buoy)']
 summary = []
+dsummary = pd.DataFrame(columns=['buoy', 'time', 'buoy_sst_mean', 'nrel_sst'])
 for b in buoys:
     print('\nBuoy: {}'.format(b))
     for startdt, enddt in zip(start_dates, end_dates):
-        [mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n] = scripts.sat_buoy_comparison_nrel.main(startdt, enddt,
-                                                                                                        b, avgrad, sDir)
+        [mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n, df] = scripts.sat_buoy_comparison_nrel.main(startdt,
+                                                                                                            enddt, b,
+                                                                                                            avgrad, sDir)
         if mean_buoy:
             year_month = ''.join((startdt.split('-')[-1], startdt.split('-')[0]))
             summary.append([b, year_month, mean_buoy, sd_buoy, mean_nrel, sd_nrel, rmse, n, diff])
+        try:
+            if len(df) > 0:
+                df.drop(axis=1, columns='time_plt', inplace=True)
+                dsummary = dsummary.append(df, sort=False)
+                dsummary.fillna(value=b, inplace=True)
+        except TypeError:
+            continue
 
 sdf = pd.DataFrame(summary, columns=headers)
 sdf.to_csv('{}/{}/NREL_buoy_comparison.csv'.format(sDir, 'NREL'), index=False)
+
+dsummary.to_csv('{}/{}/NREL_buoy_data_daily.csv'.format(sDir, 'NREL'), index=False)

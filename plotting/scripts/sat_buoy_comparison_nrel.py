@@ -66,8 +66,9 @@ def return_null_stats():
     diff = None
     rmse = None
     n = 0
+    df = None
 
-    return mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n
+    return mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n, df
 
 
 def main(t0, t1, buoy, avgrad, sDir):
@@ -150,7 +151,7 @@ def main(t0, t1, buoy, avgrad, sDir):
 
                 [mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n] = cf.statistics(buoy_data, nrel_data)
             else:
-                [mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n] = return_null_stats()
+                [mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n, df] = return_null_stats()
 
             # plot buoy raw and average along with NREL
             sname = '{}_sst_comparison_{}_{}'.format(buoy, t1.strftime('%Y%m'), 'NREL')
@@ -186,12 +187,12 @@ def main(t0, t1, buoy, avgrad, sDir):
         else:
             print('No data available from any source for buoy {}: from {} to {}'.format(buoy, t0.strftime('%Y-%m-%d'),
                                                                                         t1.strftime('%Y-%m-%d')))
-            [mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n] = return_null_stats()
+            [mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n, df] = return_null_stats()
 
     else:
-        [mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n] = return_null_stats()
+        [mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n, df] = return_null_stats()
 
-    return mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n
+    return mean_buoy, mean_nrel, sd_buoy, sd_nrel, diff, rmse, n, df
 
 
 if __name__ == '__main__':
