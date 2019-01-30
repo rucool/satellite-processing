@@ -68,4 +68,4 @@ for b in buoys:
 sdf = pd.DataFrame(summary, columns=headers)
 sdf.to_csv('{}/{}/NREL_buoy_comparison.csv'.format(sDir, 'NREL'), index=False)
 
-dsummary.to_csv('{}/{}/NREL_buoy_data_daily.csv'.format(sDir, 'NREL'), index=False)
+dsummary.to_csv('{}/{}/NREL_buoy_daily_sst.csv'.format(sDir, 'NREL'), index=False)

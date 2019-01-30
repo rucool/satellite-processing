@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 @author Laura Nazarro
-@modified by Lori Garzio on 1/8/2018
+@modified by Lori Garzio on 1/8/2019
 @brief Create daily composite coldest pixel netCDF files for historical AVHRR satellite data (from 9/1/2013 to 9/19/2018)
 """
 
@@ -12,30 +12,20 @@ import subprocess
 import os
 from datetime import datetime, timedelta
 from mpl_toolkits.basemap import interp
+import functions.common as cf
 
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
-
-
-def create_dir(new_dir):
-    # create new directory if it doesn't exist
-    if not os.path.isdir(new_dir):
-        try:
-            os.makedirs(new_dir)
-        except OSError:
-            if os.path.exists(new_dir):
-                pass
-            else:
-                raise
 
 
 # daylight hours limits for each month
 H0_lst = [14, 14, 13, 13, 12, 12, 12, 12, 13, 13, 14, 14]
 H1_lst = [20, 20, 20, 22, 22, 23, 23, 23, 21, 20, 20, 20]
 
-template_file = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/daily_avhrr/templates/wrf_9km_template.nc'
+#template_file = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/daily_avhrr/templates/wrf_9km_template.nc'
+template_file = '/Users/lgarzio/Documents/rucool/satellite/coldest_pixel//wrf_9km_template.nc'
 avhrr_dir = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/avhrr_nc/'
-out_dir = '/Users/lgarzio/Documents/RUCOOL/satellite/coldest_pixel/daily_avhrr/composites'
+out_dir = '/Users/lgarzio/Documents/rucool/satellite/coldest_pixel/daily_avhrr/composites'
 start_date = datetime(2013, 9, 1)
 end_date = datetime(2018, 9, 20)
 
@@ -43,7 +33,7 @@ for n in range(int((end_date - start_date).days)):
     d = start_date + timedelta(n)
     yr = d.year
     save_dir = os.path.join(out_dir, str(d.year))
-    create_dir(save_dir)
+    cf.create_dir(save_dir)
     dd = datetime.strftime(d, '%y%m%d')
     avhrr_files = []
     for file in os.listdir(avhrr_dir):
@@ -145,5 +135,3 @@ for n in range(int((end_date - start_date).days)):
         sst_file.contributor_role = sst_file.contributor_role + ', Data Manager'
 
         sst_file.close()
-        print(d.strftime("%Y%m%d"), "finished.")
-        exit()
