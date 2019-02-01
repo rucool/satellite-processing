@@ -135,15 +135,28 @@ def haversine_dist(blon, blat, slon, slat):
 
 
 def statistics(observations, predictions):
-    meano = round(np.mean(observations), 2)
-    meanp = round(np.mean(predictions), 2)
-    sdo = round(np.std(observations), 2)
-    sdp = round(np.std(predictions), 2)
+    ind = (~np.isnan(observations)) & (~np.isnan(predictions))  # get rid of nans
+    observations = observations[ind]
+    predictions = predictions[ind]
 
-    # satellite minus buoy (predictions minus observations)
-    diff = predictions - observations
-    diffx = [round(x, 2) for x in diff]
-    rmse = round(np.sqrt(np.mean(diff ** 2)), 2)
-    n = len(observations)
+    if len(observations) > 0:
+        meano = round(np.mean(observations), 2)
+        meanp = round(np.mean(predictions), 2)
+        sdo = round(np.std(observations), 2)
+        sdp = round(np.std(predictions), 2)
+
+        # satellite minus buoy (predictions minus observations)
+        diff = predictions - observations
+        diffx = [round(x, 2) for x in diff]
+        rmse = round(np.sqrt(np.mean(diff ** 2)), 2)
+        n = len(observations)
+    else:
+        meano = None
+        meanp = None
+        sdo = None
+        sdp = None
+        diffx = None
+        rmse = None
+        n = 0
 
     return meano, meanp, sdo, sdp, diffx, rmse, n

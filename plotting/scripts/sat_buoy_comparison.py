@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 @author Laura Nazarro
-@modified by Lori Garzio on 1/16/2018
+@modified by Lori Garzio on 1/16/2019
 @brief compare buoy data with satellite SST data
 """
 

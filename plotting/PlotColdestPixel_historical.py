@@ -7,6 +7,8 @@
 
 import numpy as np
 import os
+import glob
+from datetime import datetime, timedelta
 from netCDF4 import Dataset, num2date
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
@@ -37,29 +39,33 @@ def plotMap(figname, figtitle, data):
 
 rootdir = '/Users/lgarzio/Documents/rucool/satellite/coldest_pixel/daily_avhrr/composites'
 sDir = '/Users/lgarzio/Documents/rucool/satellite/coldest_pixel/daily_avhrr/plots'
+start_date = datetime(2015, 9, 28)   # datetime(2015, 7, 1)
+end_date = datetime(2015, 9, 29)  # datetime(2016, 7, 1)
 
-for root, dirs, files in os.walk(rootdir):
-    for f in files:
-        if f.endswith('.nc'):
-            ff = os.path.join(root, f)
-            sstnc = Dataset(ff, 'r')
-            lon = sstnc.variables['lon'][:]
-            lat = sstnc.variables['lat'][:]
-            sst = np.squeeze(sstnc.variables['sst'][:])
-            sst[sst == -999] = np.nan
-            sstt = sstnc.variables['time']
-            t = num2date(sstt[0], units=sstt.units, calendar=sstt.calendar)
-            cf.create_dir(os.path.join(sDir, str(t.year)))
-            sname = 'avhrr_daily_plt_{}.png'.format(t.strftime('%Y%m%d'))
-            sfile = os.path.join(sDir, str(t.year), sname)
+for n in range(int((end_date - start_date).days)):
+    d = start_date + timedelta(n)
+    yr = d.year
+    avhrr_dir = os.path.join(rootdir, str(yr))
+    ff = glob.glob(avhrr_dir + '/avhrr_coldest-pixel_' + d.strftime('%Y%m%d') + '*.nc')
+    if len(ff) > 0:
+        sstnc = Dataset(ff[0], 'r')
+        lon = sstnc.variables['lon'][:]
+        lat = sstnc.variables['lat'][:]
+        sst = np.squeeze(sstnc.variables['sst'][:])
+        sst[sst == -999] = np.nan
+        sstt = sstnc.variables['time']
+        t = num2date(sstt[0], units=sstt.units, calendar=sstt.calendar)
+        cf.create_dir(os.path.join(sDir, str(t.year)))
+        sname = 'avhrr_daily_plt_{}.png'.format(t.strftime('%Y%m%d'))
+        sfile = os.path.join(sDir, str(t.year), sname)
 
-            LAND = cfeature.NaturalEarthFeature('physical', 'land', '10m', edgecolor='face', facecolor='tan')
+        LAND = cfeature.NaturalEarthFeature('physical', 'land', '10m', edgecolor='face', facecolor='tan')
 
-            state_lines = cfeature.NaturalEarthFeature(
-                category='cultural',
-                name='admin_1_states_provinces_lines',
-                scale='50m',
-                facecolor='none')
+        state_lines = cfeature.NaturalEarthFeature(
+            category='cultural',
+            name='admin_1_states_provinces_lines',
+            scale='50m',
+            facecolor='none')
 
-            print('plotting {}'.format(f))
-            plotMap(sfile, '1-day Coldest Pixel AVHRR Composite ' + t.strftime('%Y-%m-%d'), sst)
+        print('plotting {}'.format(ff[0].split('/')[-1]))
+        plotMap(sfile, '1-day Coldest Pixel AVHRR Composite ' + t.strftime('%Y-%m-%d'), sst)
