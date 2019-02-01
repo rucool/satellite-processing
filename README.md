@@ -8,7 +8,7 @@ Add the channel, conda-forge, to your .condarc. You can find out more about cond
 
 Clone the satellite-processing repository
 
-'git clone https://github.com/rucool/satellite-processing.git'
+`git clone https://github.com/rucool/satellite-processing.git`
 
 Change your current working directory to the location that you downloaded satellite-processing. 
 
@@ -20,11 +20,11 @@ Create conda environment from the included environment.yml file:
 
 Once the environment is done building, activate the environment:
 
-'conda activate satellite-processing'
+`conda activate satellite-processing`
 
 Install the toolbox to the conda environment from the root directory of the satellite-processing toolbox:
 
-'pip install .'
+`pip install .`
 
 The toolbox should now be installed to your conda environment.
 
