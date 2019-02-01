@@ -69,7 +69,7 @@ for n in range(int((end_date - start_date).days)):
 
             if int(passH) >= H0 and int(passH) < H1:
                 pass_info = pass_info + "NOAA-" + passS + " " + passH + ":" + passM + "GMT, "
-                avhrr_data = Dataset(avhrr, "r+")
+                avhrr_data = Dataset(avhrr, "r")
                 avhrrlon = avhrr_data.variables['lon']
                 avhrrlat = avhrr_data.variables['lat']
                 # turns it into a 2D matrix (gets rid of the time dimension)
