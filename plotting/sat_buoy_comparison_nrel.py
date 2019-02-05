@@ -3,6 +3,14 @@
 @author Laura Nazarro
 @modified by Lori Garzio on 1/16/2019
 @brief compare buoy data with satellite SST data from the NREL case study, by month
+@usage
+sDir: location to save plots
+avgrad: radius around the buoy from which to grab satellite data. options: x (average all data within radius x km of
+the buoy), 'closest' (grabs the closest data point), 'closestwithinx' (get the closest non-nan measurement as long as
+it is within x km of the buoy
+start: start time. options: date, int (if int, looks at t1 back t0 days)
+end: end time. options: date, int (if int, looks at t0 forward t1 days), 'today', 'yesterday'
+
 """
 
 import matplotlib.pyplot as plt
