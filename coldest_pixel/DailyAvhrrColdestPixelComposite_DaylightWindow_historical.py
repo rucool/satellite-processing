@@ -23,7 +23,7 @@ H0_lst = [14, 14, 13, 13, 12, 12, 12, 12, 13, 13, 14, 14]
 H1_lst = [20, 20, 20, 22, 22, 23, 23, 23, 21, 20, 20, 20]
 
 #template_file = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/daily_avhrr/templates/wrf_9km_template.nc'
-template_file = '/Users/lgarzio/Documents/rucool/satellite/coldest_pixel//wrf_9km_template.nc'
+template_file = '/Users/lgarzio/Documents/rucool/satellite/coldest_pixel/wrf_9km_template.nc'
 avhrr_dir = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/avhrr_nc/'
 out_dir = '/Users/lgarzio/Documents/rucool/satellite/coldest_pixel/daily_avhrr/composites'
 start_date = datetime(2013, 9, 1)
@@ -63,48 +63,58 @@ for n in range(int((end_date - start_date).days)):
 
         for avhrr in avhrr_files:
             print("processing", avhrr)
-            passH = avhrr[-18:-16]
-            passM = avhrr[-16:-14]
-            passS = avhrr[-12:-10]
+            passH = avhrr[-18:-16]  # hour
+            passM = avhrr[-16:-14]  # minute
+            passS = avhrr[-12:-10]  # satelliteID (ie NOAA-19)
 
+            # check if the pass is within the daylight window defined by H0 and H1
+            # add pass to composite if it is
             if int(passH) >= H0 and int(passH) < H1:
                 pass_info = pass_info + "NOAA-" + passS + " " + passH + ":" + passM + "GMT, "
+
+                # open AVHRR single-pass netcdf file and read grid
                 avhrr_data = Dataset(avhrr, "r")
-                avhrrlon = avhrr_data.variables['lon']
-                avhrrlat = avhrr_data.variables['lat']
-                # turns it into a 2D matrix (gets rid of the time dimension)
+                avhrrlon = avhrr_data.variables['lon'][:]
+                avhrrlat = avhrr_data.variables['lat'][:]
+                # squeeze SST to remove time dimension and get 2D matrix
                 avhrrsst = np.squeeze(avhrr_data.variables['mcsst'])
                 avhrrsst_data = avhrrsst[:]
                 avhrrsst_data[avhrrsst_data == -999] = np.nan
                 try:
-                    # if some lons are masked
+                    # if any lons are masked, remove them
                     if True in avhrrlon[:].mask:
                         avhrrsst_data = avhrrsst_data[:, ~avhrrlon[:].mask]
                         avhrrlon = avhrrlon[~avhrrlon[:].mask]
                 except:
                     pass
                 try:
-                    # if some lats are masked
+                    # if any lats are masked, remove them
                     if True in avhrrlat[:].mask:
                         avhrrsst_data = avhrrsst_data[~avhrrlat[:].mask, :]
                         avhrrlat = avhrrlat[~avhrrlat[:].mask]
                 except:
                     pass
 
-                # reverse the data array if the lat values are descending
+                # reverse data array if lat values are descending
                 if avhrrlat[0] > avhrrlat[-1]:
                     avhrrlat[:] = avhrrlat[::-1]
                     avhrrsst_data = avhrrsst_data[::-1, :]
-                # reverse the data array if the lon values are descending
+                # reverse data array if lon values are descending
                 if avhrrlon[0] > avhrrlon[-1]:
                     avhrrlon[:] = avhrrlon[::-1]
                     avhrrsst_data = avhrrsst_data[:, ::-1]
 
+                # regrid AVHRR pass SST to the output composite grid
                 regrid_sst = interp(avhrrsst_data[:], avhrrlon[:], avhrrlat[:], lonx, laty)
+                # remove any data artifacts on the new grid that are outside the domain of the AVHRR grid
                 regrid_sst[lonx > np.max(avhrrlon[:])] = np.nan
                 regrid_sst[lonx < np.min(avhrrlon[:])] = np.nan
                 regrid_sst[laty > np.max(avhrrlat[:])] = np.nan
                 regrid_sst[laty < np.min(avhrrlat[:])] = np.nan
+
+                # replace any data points in composite grid with data from current
+                # AVHRR pass, as long as corresponding data points in the composite
+                # are 1) nans or 2) warmer than the new data
                 minT = np.fmin(minT, regrid_sst)
                 avhrr_data.close()
 

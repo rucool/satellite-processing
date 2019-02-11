@@ -2,7 +2,7 @@
 Rutgers Center for Ocean Observing Leadership tools to manage and plot satellite data.
 
 ## Installation Instructions
-Add the channel, conda-forge, to your .condarc. You can find out more about conda-forge from their website: https://conda-forge.org/
+Add the channel conda-forge to your .condarc. You can find out more about conda-forge from their website: https://conda-forge.org/
 
 `conda config --add channels conda-forge`
 
