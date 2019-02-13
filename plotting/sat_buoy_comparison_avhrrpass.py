@@ -22,22 +22,9 @@ import functions.common as cf
 import functions.plotting as pf
 
 
-def append_row(lst, row):
-    lst.append([row['time'], row['buoy_sst'], row['avhrr_sst']])
-
-
-def append_previous_row(lst, df, index):
-    if not np.isnan(df.iloc[index - 1]['buoy_sst']):
-        lst.append([df.iloc[index - 1]['time'], df.iloc[index - 1]['buoy_sst'], df.iloc[index - 1]['avhrr_sst']])
-
-
-def append_next_row(lst, df, index):
-    if not np.isnan(df.iloc[index + 1]['buoy_sst']):
-        lst.append([df.iloc[index + 1]['time'], df.iloc[index + 1]['buoy_sst'], df.iloc[index + 1]['avhrr_sst']])
-
-
-def plot_avhrr(axis, x, y):
-    axis.plot(x, y, 's', markerfacecolor='blue', markeredgecolor='blue', markersize=4, label='AVHRR passes')
+def plot_avhrr(axis, x, y, rmse, n):
+    axis.plot(x, y, 's', markerfacecolor='blue', markeredgecolor='blue', markersize=4,
+              label='AVHRR (RMSE={}, n={})'.format(rmse, n))
     return axis
 
 
@@ -53,6 +40,8 @@ def main(start, end, buoys, avgrad, sDir):
     H0_lst = [14, 14, 13, 13, 12, 12, 12, 12, 13, 13, 14, 14]
     H1_lst = [20, 20, 20, 22, 22, 23, 23, 23, 21, 20, 20, 20]
 
+    sheaders = ['buoy', 'year-month', 'mean_buoy', 'sd_buoy', 'mean_avhrr', 'sd_avhrr', 'RMSE', 'n', 'diff (sat-buoy)']
+    summary = []
     for buoy in buoys:
         print(buoy)
 
@@ -137,45 +126,56 @@ def main(start, end, buoys, avgrad, sDir):
                     final_data = []
                     for i, row in df.iterrows():
                         if not np.isnan(row['avhrr_sst']):
-                            if i == 0:
-                                append_row(final_data, row)
-                                # append data from the next row if the buoy_sst isn't a nan
-                                append_next_row(final_data, df, i)
-                            elif i == len(df) - 1:
-                                # append data from the previous row if the buoy_sst isn't a nan
-                                append_previous_row(final_data, df, i)
-                                append_row(final_data, row)
+                            # take the satellite time and sst data, along with the buoy_sst at exactly the same
+                            # time (if possible)
+                            if not np.isnan(row['buoy_sst']):
+                                final_data.append([row['time'], row['buoy_sst'], row['avhrr_sst']])
                             else:
-                                # append data from the previous row if the buoy_sst isn't a nan
-                                append_previous_row(final_data, df, i)
-                                append_row(final_data, row)
-                                # append data from the next row if the buoy_sst isn't a nan
-                                append_next_row(final_data, df, i)
+                                if i == 0:
+                                    # take the buoy data at the next timestamp if you're at the very beginning
+                                    final_data.append([row['time'], df.iloc[i + 1]['buoy_sst'], row['avhrr_sst']])
+                                elif i == len(df) - 1:
+                                    # take the buoy data at the previous timestamp if you're at the very end
+                                    final_data.append([row['time'], df.iloc[i - 1]['buoy_sst'], row['avhrr_sst']])
+                                else:
+                                    # take the average of the buoy data at the two surrounding timestamps if you're in
+                                    # the middle of the df
+                                    buoy_mean = np.nanmean([df.iloc[i - 1]['buoy_sst'], df.iloc[i + 1]['buoy_sst']])
+                                    final_data.append([row['time'], buoy_mean, row['avhrr_sst']])
 
                     fdf = pd.DataFrame(final_data, columns=headers)
+                    fdf.dropna(axis=0, subset=['buoy_sst', 'avhrr_sst'], inplace=True)
                     if len(fdf) > 0:
+                        buoy_data = np.array(fdf['buoy_sst'])
+                        avhrr_data = np.array(fdf['avhrr_sst'])
+                        [mbuoy, mavhrr, sdbuoy, sdavhrr, diff, rmse, n] = cf.statistics(buoy_data, avhrr_data)
+
+                        # add monthly stats to summary
+                        summary.append(
+                            [buoy, t0.strftime('%Y%m'), mbuoy, sdbuoy, mavhrr, sdavhrr, rmse, n, diff])
+
                         save_dir = os.path.join(sDir, 'AVHRR_individual_passes', buoy)
                         cf.create_dir(save_dir)
                         sname = '{}_sst_comparison_{}_AVHRR'.format(buoy, t1.strftime('%Y%m'))
                         fig, ax = plt.subplots()
                         plt.grid()
                         ax = plot_buoy_full(ax, fdf['time'], fdf['buoy_sst'], buoy)
-                        ax = plot_avhrr(ax, fdf['time'], fdf['avhrr_sst'])
+                        ax = plot_avhrr(ax, fdf['time'], fdf['avhrr_sst'], rmse, n)
                         ax.set_ylabel('Sea Surface Temperature (Celsius)', fontsize=9)
                         pf.format_date_axis(ax, fig)
                         pf.y_axis_disable_offset(ax)
                         ax.legend(loc='best', fontsize=5.5)
                         pf.save_fig(save_dir, sname)
 
+    sdf = pd.DataFrame(summary, columns=sheaders)
+    sdf.to_csv('{}/{}/AVHRR_buoy_comparison.csv'.format(sDir, 'AVHRR_individual_passes'), index=False)
+
 
 if __name__ == '__main__':
     pd.set_option('display.width', 320, "display.max_columns", 10)  # for display in pycharm console
-    #start = '6-1-2015'
-    start = '4-4-2016'
+    start = '6-1-2015'
     end = '5-31-2016'
-    # buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
-    #          '44017', '44018', '44020', '44025', '44027', '44065']
-    buoys = ['41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
+    buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
              '44017', '44018', '44020', '44025', '44027', '44065']
     avgrad = 'closestwithin5'
     sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp'
