@@ -8,9 +8,7 @@ Create by Lori Garzio on 1/16/2019
 
 import pandas as pd
 import matplotlib.pyplot as plt
-import os
 import datetime as dt
-import functions.common as cf
 import functions.plotting as pf
 pd.set_option('display.width', 320, "display.max_columns", 10)  # for display in pycharm console
 

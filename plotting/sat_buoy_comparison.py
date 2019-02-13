@@ -25,16 +25,6 @@ import functions.common as cf
 import functions.plotting as pf
 
 
-def format_dates(dt):
-    if dt == 'today':
-        dt = datetime.now()
-    elif dt == 'yesterday':
-        dt = datetime.now()-timedelta(days=1)
-    else:
-        dt = datetime.strptime(dt, "%m-%d-%Y")
-    return dt
-
-
 def initialize_empty_array(time_array):
     empty_array = np.empty(np.shape(time_array))
     empty_array[:] = np.nan
@@ -75,10 +65,10 @@ def main(t0, t1, buoys, avgrad, sDir, models):
     bpudatadir = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/'
 
     if not isinstance(t0, int):  # if t0 is not integer, define date
-        t0 = format_dates(t0)
+        t0 = cf.format_dates(t0)
 
     if not isinstance(t1, int):  # if t1 is not integer, define date
-        t1 = format_dates(t1)
+        t1 = cf.format_dates(t1)
 
     if isinstance(t0, int):  # if t0 is integer, redefine as t1-[t0 days]
         t0 = t1-timedelta(days=t0)
