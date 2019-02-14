@@ -170,7 +170,7 @@ def statistics(observations, predictions):
 
         # satellite minus buoy (predictions minus observations)
         diff = predictions - observations
-        diffx = [round(x, 2) for x in diff]
+        #diffx = [round(x, 2) for x in diff]
         rmse = round(np.sqrt(np.mean(diff ** 2)), 2)
         n = len(observations)
     else:
@@ -178,8 +178,8 @@ def statistics(observations, predictions):
         meanp = None
         sdo = None
         sdp = None
-        diffx = None
+        diff = None
         rmse = None
         n = 0
 
-    return meano, meanp, sdo, sdp, diffx, rmse, n
+    return meano, meanp, sdo, sdp, diff, rmse, n

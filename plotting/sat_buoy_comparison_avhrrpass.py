@@ -17,7 +17,6 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 import os
-import xarray as xr
 import functions.common as cf
 import functions.plotting as pf
 
@@ -42,6 +41,10 @@ def main(start, end, buoys, avgrad, sDir):
 
     sheaders = ['buoy', 'year-month', 'mean_buoy', 'sd_buoy', 'mean_avhrr', 'sd_avhrr', 'RMSE', 'n', 'diff (sat-buoy)']
     summary = []
+    # for bulk stats
+    diff_all = []
+    fbuoy_lst = []
+    diff_monthly = {}
     for buoy in buoys:
         print(buoy)
 
@@ -150,9 +153,24 @@ def main(start, end, buoys, avgrad, sDir):
                         avhrr_data = np.array(fdf['avhrr_sst'])
                         [mbuoy, mavhrr, sdbuoy, sdavhrr, diff, rmse, n] = cf.statistics(buoy_data, avhrr_data)
 
+                        # add stats to bulk summary
+                        diff_all = np.append(diff_all, diff)
+                        if buoy not in fbuoy_lst:
+                            fbuoy_lst.append(buoy)
+
+                        try:
+                            diff_monthly[t0.strftime('%Y%m')]
+                        except KeyError:
+                            diff_monthly[t0.strftime('%Y%m')] = dict(diff=np.array([]), buoys=[])
+                        diff_monthly[t0.strftime('%Y%m')]['diff'] = np.append(diff_monthly[t0.strftime('%Y%m')]['diff'], diff)
+
+                        if buoy not in diff_monthly[t0.strftime('%Y%m')]['buoys']:
+                            diff_monthly[t0.strftime('%Y%m')]['buoys'].append(buoy)
+
                         # add monthly stats to summary
+                        diffx = [round(x, 2) for x in diff]
                         summary.append(
-                            [buoy, t0.strftime('%Y%m'), mbuoy, sdbuoy, mavhrr, sdavhrr, rmse, n, diff])
+                            [buoy, t0.strftime('%Y%m'), mbuoy, sdbuoy, mavhrr, sdavhrr, rmse, n, diffx])
 
                         save_dir = os.path.join(sDir, 'AVHRR_individual_passes', buoy)
                         cf.create_dir(save_dir)
@@ -169,6 +187,21 @@ def main(start, end, buoys, avgrad, sDir):
 
     sdf = pd.DataFrame(summary, columns=sheaders)
     sdf.to_csv('{}/{}/AVHRR_buoy_comparison.csv'.format(sDir, 'AVHRR_individual_passes'), index=False)
+
+    stats = []
+    n = len(diff_all)
+    rmse = round(np.sqrt(np.mean(diff_all ** 2)), 2)
+    stats.append(['overall', rmse, n, fbuoy_lst])
+
+    for key in list(diff_monthly.keys()):
+        mdiff = diff_monthly[key]['diff']
+        n = len(mdiff)
+        rmse = round(np.sqrt(np.mean(mdiff ** 2)), 2)
+        stats.append([key, rmse, n, diff_monthly[key]['buoys']])
+
+    statsdf = pd.DataFrame(stats, columns=['year-month', 'RMSE', 'n', 'buoys'])
+    statsdf.sort_values('year-month', inplace=True)
+    statsdf.to_csv('{}/{}/AVHRR_buoy_comparison_bulkstats.csv'.format(sDir, 'AVHRR_individual_passes'), index=False)
 
 
 if __name__ == '__main__':
