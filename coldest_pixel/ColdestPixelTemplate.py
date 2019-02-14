@@ -15,7 +15,7 @@ minlon=-83.25
 maxlon=-56.9
 
 murlink='http://basin.ceoe.udel.edu/thredds/dodsC/NASAMURSST.nc';
-mur=Dataset(murlink,'r+')
+mur=Dataset(murlink,'r')
 lon=mur.variables['lon']
 lat=mur.variables['lat']
 mask=mur.variables['mask']
