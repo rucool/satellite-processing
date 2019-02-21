@@ -13,6 +13,7 @@ end: end time. options: date, int (if int, looks at t0 forward t1 days), 'today'
 
 
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
@@ -201,7 +202,29 @@ def main(start, end, buoys, avgrad, sDir):
 
     statsdf = pd.DataFrame(stats, columns=['year-month', 'RMSE', 'n', 'buoys'])
     statsdf.sort_values('year-month', inplace=True)
-    statsdf.to_csv('{}/{}/AVHRR_buoy_comparison_bulkstats.csv'.format(sDir, 'AVHRR_individual_passes'), index=False)
+    statsdf.to_csv('{}/{}/AVHRR_buoy_comparison_monthlystats.csv'.format(sDir, 'AVHRR_individual_passes'), index=False)
+
+    # plot RMSEs
+    colors = cm.rainbow(np.linspace(0, 1, len(buoys)))
+    fig, ax = plt.subplots()
+    fig.subplots_adjust(right=0.84)
+    plt.grid()
+    for i in range(len(buoys)):
+        sdfb = sdf[sdf['buoy'] == buoys[i]]
+        if len(sdfb) > 0:
+            c = colors[i]
+            x = sdfb['year-month'].map(lambda t: datetime.strptime(str(t), '%Y%m'))
+            ax.plot(x, sdfb['RMSE'], '.', markersize=3, color=c, linestyle='-', lw=.75, label=str(buoys[i]))
+
+    x = statsdf['year-month'][:-1].map(lambda t: datetime.strptime(str(t), '%Y%m'))
+    ax.plot(x, statsdf['RMSE'][:-1], '.', markersize=7, color='black', linestyle='-', lw=2, label='Overall')
+
+    ax.set_ylabel('Monthly RMSE', fontsize=9)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fontsize=6.5)
+    plt.title('AVHRR individual passes vs. buoy SST', fontsize=9)
+    pf.format_date_axis_month(ax, fig)
+    sname = 'rmse_plot'
+    pf.save_fig(sDir, sname)
 
 
 if __name__ == '__main__':
