@@ -13,6 +13,9 @@ def append_satellite_sst_data(sat_nc_file, buoylat, buoylon, radius, method, sst
     if method == 'sport':
         satlon = satdata['lon_0'].values - 360
         satlat = satdata['lat_0'].values
+    elif method == 'rtg':
+        satlon = satdata['lon_173'].values - 360
+        satlat = satdata['lat_173'].values
     else:
         satlon = satdata['lon'].values
         satlat = satdata['lat'].values
@@ -33,7 +36,7 @@ def append_satellite_sst_data(sat_nc_file, buoylat, buoylon, radius, method, sst
             satsst = np.squeeze(satdata[sst_varname][:, lon_ind, lat_ind])
             satsst.values[satsst == satdata[sst_varname]._FillValue] = np.nan  # turn fill values to nans
             laty, lonx = np.meshgrid(satlat[lat_ind], satlon[lon_ind])
-        elif method == 'sport':
+        elif method in ['sport', 'rtg']:
             satsst = np.squeeze(satdata[sst_varname][lat_ind, lon_ind])
             satsst.values[satsst == satdata[sst_varname]._FillValue] = np.nan  # turn fill values to nans
             satsst.values[satsst == -9999] = np.nan
