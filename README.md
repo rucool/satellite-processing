@@ -29,6 +29,9 @@ Install the toolbox to the conda environment from the root directory of the sate
 The toolbox should now be installed to your conda environment.
 
 ## Folders
+### buoy_comparisons
+Contains tools for comparing various satellite data products to buoy data.
+
 ### coldest_pixel
 Contains tools for producing netCDF files containing the daily coldest pixel composite using NOAA-AVHRR satellite SST declouded based on reflectivity in the visible spectrum. This method of declouding is limited to daylight hours, but lets in cold water that often gets flagged as clouds based on other declouding algorithms, making this product a useful tool for identifying upwelling regions and storm cooling earlier than they are typically seen in other SST products.
 
