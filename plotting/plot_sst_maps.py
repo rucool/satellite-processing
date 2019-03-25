@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import xarray as xr
+import geopandas as gpd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import functions.common as cf
 
@@ -36,19 +37,19 @@ def get_files(md, dt):
     return ff
 
 
-def plotMap(figname, figtitle, latdata, londata, data):
+def plotMap(figname, figtitle, latdata, londata, data, lease_area, plan_area):
     fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection=ccrs.PlateCarree()))
     plt.title(figtitle)
     divider = make_axes_locatable(ax)
     cax = divider.new_horizontal(size='5%', pad=0.05, axes_class=plt.Axes)
     fig.add_axes(cax)
-    h = ax.pcolor(londata, latdata, data, vmin=10, vmax=30, cmap='jet')
-    cb = plt.colorbar(h, cax=cax, label='Temperature (degrees C)')
+    h = ax.pcolor(londata, latdata, data, vmin=15, vmax=26, cmap='jet')
+    cb = plt.colorbar(h, cax=cax, label='Temperature ($^\circ$C)')
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=2, color='gray', alpha=0.5, linestyle='--')
     gl.xlabels_top = False
     gl.ylabels_right = False
-    ax.set_extent([-78, -69, 36.5, 43])  # [min lon, max lon, min lat, max lat]
-    LAND = cfeature.NaturalEarthFeature('physical', 'land', '10m', edgecolor='face', facecolor='tan')
+    ax.set_extent([-76, -72.5, 37, 41])  # [min lon, max lon, min lat, max lat]
+    LAND = cfeature.NaturalEarthFeature('physical', 'land', '10m', edgecolor='face', facecolor='gainsboro')
 
     state_lines = cfeature.NaturalEarthFeature(
         category='cultural',
@@ -60,6 +61,8 @@ def plotMap(figname, figtitle, latdata, londata, data):
     ax.add_feature(cfeature.LAKES, zorder=8, facecolor='white')
     ax.add_feature(cfeature.BORDERS, zorder=6)
     ax.add_feature(state_lines, zorder=7, edgecolor='black')
+    areas = lease_area.plot(ax=ax, color='none', edgecolor='black')
+    areas = plan_area.plot(ax=ax, color='none', edgecolor='darkgray')
     plt.savefig(figname, dpi=300)
     plt.close()
 
@@ -70,6 +73,13 @@ sDir = '/Users/lgarzio/Documents/rucool/satellite/201508_upwelling_analysis'
 #sDir = '/home/lgarzio/rucool/satellite/coldest_pixel/daily_avhrr/plots'
 start_date = datetime(2015, 7, 25)   # datetime(2015, 7, 1)
 end_date = datetime(2015, 8, 11)  # datetime(2016, 7, 1)
+
+shape_file_lease = os.path.join(sDir, 'shapefiles/BOEM_Renewable_Energy_Shapefiles_4_9_2018/BOEM_Lease_Areas_4_9_2018.shp')
+shape_file_plan = os.path.join(sDir, 'shapefiles/BOEM_Renewable_Energy_Shapefiles_4_9_2018/BOEM_Wind_Planning_Areas_4_9_2018.shp')
+leasing_areas = gpd.read_file(shape_file_lease)
+leasing_areas = leasing_areas.to_crs(crs={'init': 'epsg:4326'})
+planning_areas = gpd.read_file(shape_file_plan)
+planning_areas = planning_areas.to_crs(crs={'init': 'epsg:4326'})
 
 for n in range(int((end_date - start_date).days)):
     dt = start_date + timedelta(n)
@@ -115,4 +125,4 @@ for n in range(int((end_date - start_date).days)):
                 sst = sst - 273.15  # convert K to C
 
             print('plotting {}'.format(ff[0].split('/')[-1]))
-            plotMap(sfile, title, lat[lat_ind], lon[lon_ind], sst.values)
+            plotMap(sfile, title, lat[lat_ind], lon[lon_ind], sst.values, leasing_areas, planning_areas)
