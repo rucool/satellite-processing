@@ -43,7 +43,7 @@ def plotMap(figname, figtitle, latdata, londata, data, lease_area, plan_area):
     divider = make_axes_locatable(ax)
     cax = divider.new_horizontal(size='5%', pad=0.05, axes_class=plt.Axes)
     fig.add_axes(cax)
-    h = ax.pcolor(londata, latdata, data, vmin=15, vmax=26, cmap='jet')
+    h = ax.pcolor(londata, latdata, data, vmin=18, vmax=28, cmap='jet')
     cb = plt.colorbar(h, cax=cax, label='Temperature ($^\circ$C)')
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=2, color='gray', alpha=0.5, linestyle='--')
     gl.xlabels_top = False
