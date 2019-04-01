@@ -77,8 +77,8 @@ sDir = '/Users/lgarzio/Documents/rucool/satellite/201508_upwelling_analysis'
 start_date = datetime(2015, 7, 25)   # datetime(2015, 7, 1)
 end_date = datetime(2015, 8, 11)  # datetime(2016, 7, 1)
 
-shape_file_lease = os.path.join(sDir, 'shapefiles/BOEM_Renewable_Energy_Shapefiles_4_9_2018/BOEM_Lease_Areas_4_9_2018.shp')
-shape_file_plan = os.path.join(sDir, 'shapefiles/BOEM_Renewable_Energy_Shapefiles_4_9_2018/BOEM_Wind_Planning_Areas_4_9_2018.shp')
+shape_file_lease = os.path.join(sDir, 'shapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Lease_Areas_10_24_2018.shp')
+shape_file_plan = os.path.join(sDir, 'shapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Wind_Planning_Areas_10_24_2018.shp')
 leasing_areas = gpd.read_file(shape_file_lease)
 leasing_areas = leasing_areas.to_crs(crs={'init': 'epsg:4326'})
 planning_areas = gpd.read_file(shape_file_plan)
