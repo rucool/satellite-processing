@@ -34,6 +34,9 @@ def get_files(md, dt):
     elif md == 'gfs':
         fdir = os.path.join(rootdir, 'gfs_nc', str(yr))
         ff = glob.glob(fdir + '/gfs.0p25.*' + dt.strftime('%Y%m%d') + '*f000.nc')
+    elif md == 'nam':
+        fdir = os.path.join(rootdir, 'nam_nc', str(yr))
+        ff = glob.glob(fdir + '/nam_*' + dt.strftime('%Y%m%d') + '*_000.nc')
     return ff
 
 
@@ -67,7 +70,7 @@ def plotMap(figname, figtitle, latdata, londata, data, lease_area, plan_area):
     plt.close()
 
 
-model = ['avhrr1', 'avhrr3', 'rtg', 'gfs']
+model = ['nam', 'avhrr1', 'avhrr3', 'rtg', 'gfs']
 sDir = '/Users/lgarzio/Documents/rucool/satellite/201508_upwelling_analysis'
 #rootdir = '/home/lgarzio/rucool/satellite/coldest_pixel/daily_avhrr/composites'
 #sDir = '/home/lgarzio/rucool/satellite/coldest_pixel/daily_avhrr/plots'
@@ -83,20 +86,20 @@ planning_areas = planning_areas.to_crs(crs={'init': 'epsg:4326'})
 
 for n in range(int((end_date - start_date).days)):
     dt = start_date + timedelta(n)
-    var_names = ['sst', 'sst', 'TMP_173_SFC', 'TMP_P0_L1_GLL0']
-    lat_names = ['lat', 'lat', 'lat_173', 'lat_0']
-    lon_names = ['lon', 'lon', 'lon_173', 'lon_0']
+    var_names = ['TMP_P0_L1_GLC0', 'sst', 'sst', 'TMP_173_SFC', 'TMP_P0_L1_GLL0']
+    lat_names = ['gridlat_0', 'lat', 'lat', 'lat_173', 'lat_0']
+    lon_names = ['gridlon_0', 'lon', 'lon', 'lon_173', 'lon_0']
     for i in range(len(model)):
         ff = get_files(model[i], dt)
         if len(ff) == 1:
             vname = var_names[i]
             sstnc = xr.open_dataset(ff[0], mask_and_scale=False)
             sstnc.load()
-            if 'avhrr' not in model[i]:
-                lon = sstnc[lon_names[i]].values - 360
+            if model[i] in ['rtg', 'gfs']:
+                lon = sstnc[lon_names[i]] - 360
             else:
-                lon = sstnc[lon_names[i]].values
-            lat = sstnc[lat_names[i]].values
+                lon = sstnc[lon_names[i]]
+            lat = sstnc[lat_names[i]]
             lon_ind = np.logical_and(lon > -78, lon < -68)
             lat_ind = np.logical_and(lat > 35, lat < 45)
 
@@ -120,9 +123,23 @@ for n in range(int((end_date - start_date).days)):
             elif model[i] == 'gfs':
                 sst = np.squeeze(sstnc[vname][lat_ind, lon_ind])
                 title = 'GFS (f000) {}'.format(dt.strftime('%Y-%m-%d'))
+            elif model[i] == 'nam':
+                # find i and j indices of lon/lat in boundaries
+                ind = np.where(np.logical_and(lon_ind, lat_ind))
+                # subset lats, lons, sst from min i,j corner to max i,j corner
+                # there will be some points outside of defined boundaries because grid is not rectangular
+                lats = lat[range(np.min(ind[0]), np.max(ind[0]) + 1), range(np.min(ind[1]), np.max(ind[1]) + 1)]
+                lons = lon[range(np.min(ind[0]), np.max(ind[0]) + 1), range(np.min(ind[1]), np.max(ind[1]) + 1)]
+                sst = sstnc[vname]
+                sst = sst[range(np.min(ind[0]), np.max(ind[0]) + 1), range(np.min(ind[1]), np.max(ind[1]) + 1)]
+                title = 'NAM {}'.format(dt.strftime('%Y-%m-%d'))
+
+            if 'nam' not in model[i]:
+                lats = lat[lat_ind]
+                lons = lon[lon_ind]
 
             if 'avhrr' not in model[i]:
                 sst = sst - 273.15  # convert K to C
 
             print('plotting {}'.format(ff[0].split('/')[-1]))
-            plotMap(sfile, title, lat[lat_ind], lon[lon_ind], sst.values, leasing_areas, planning_areas)
+            plotMap(sfile, title, lats.values, lons.values, sst.values, leasing_areas, planning_areas)
