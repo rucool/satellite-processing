@@ -160,6 +160,10 @@ def haversine_dist(blon, blat, slon, slat):
     return distance
 
 
+def range1(start, end):
+    return range(start, end+1)
+
+
 def statistics(observations, predictions):
     ind = (~np.isnan(observations)) & (~np.isnan(predictions))  # get rid of nans
     observations = observations[ind]
