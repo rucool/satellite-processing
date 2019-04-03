@@ -13,3 +13,4 @@ dependencies:
   - xarray==0.10.9
   - geopandas==0.4.0
   - oceans==0.7.0
+  - cmocean==2.0
