@@ -6,39 +6,10 @@ Created on Jan 25 2019 by Lori Garzio
 
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
-import itertools
 import numpy as np
-import os
-import requests
-import re
 import xarray as xr
+import functions.common as cf
 import functions.plotting as pf
-
-
-def get_nc_urls(catalog_urls):
-    """
-    Return a list of urls to access netCDF files in THREDDS
-    :param catalog_urls: List of THREDDS catalog urls
-    :return: List of netCDF urls for data access
-    """
-    tds_url = 'https://dods.ndbc.noaa.gov/thredds/dodsC'
-    datasets = []
-    for i in catalog_urls:
-        dataset = requests.get(i).text
-        ii = re.findall(r'href=[\'"]?([^\'" >]+)', dataset)
-        x = re.findall(r'(data/.*?.nc)', dataset)
-        for i in x:
-            if i.endswith('.nc') == False:
-                x.remove(i)
-        for i in x:
-            try:
-                float(i[-4])
-            except:
-                x.remove(i)
-        dataset = [os.path.join(tds_url, i) for i in x]
-        datasets.append(dataset)
-    datasets = list(itertools.chain(*datasets))
-    return datasets
 
 
 sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp'
@@ -49,7 +20,7 @@ lats = []
 lons = []
 for b in buoys:
     buoy_catalog = ['https://dods.ndbc.noaa.gov/thredds/catalog/data/stdmet/{}/catalog.html'.format(b)]
-    datasets = get_nc_urls(buoy_catalog)
+    datasets = cf.get_nc_urls(buoy_catalog)
     f = datasets[-1]  # get the lat and lon from the most recent file for that buoy
     ds = xr.open_dataset(f, mask_and_scale=False)
     lats.append(ds['latitude'].values[0])

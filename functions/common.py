@@ -5,6 +5,9 @@ import numbers
 import numpy as np
 import os
 import xarray as xr
+import requests
+import re
+import itertools
 
 
 def append_satellite_sst_data(sat_nc_file, buoylat, buoylon, radius, method, sst_varname):
@@ -143,6 +146,32 @@ def get_buoy_data(buoy_name, all_years, t0, t1):
             print('File does not exist: {}'.format(buoydap))
 
     return buoy_dict
+
+
+def get_nc_urls(catalog_urls):
+    """
+    Return a list of urls to access netCDF files in THREDDS
+    :param catalog_urls: List of THREDDS catalog urls
+    :return: List of netCDF urls for data access
+    """
+    tds_url = 'https://dods.ndbc.noaa.gov/thredds/dodsC'
+    datasets = []
+    for i in catalog_urls:
+        dataset = requests.get(i).text
+        ii = re.findall(r'href=[\'"]?([^\'" >]+)', dataset)
+        x = re.findall(r'(data/.*?.nc)', dataset)
+        for i in x:
+            if i.endswith('.nc') == False:
+                x.remove(i)
+        for i in x:
+            try:
+                float(i[-4])
+            except:
+                x.remove(i)
+        dataset = [os.path.join(tds_url, i) for i in x]
+        datasets.append(dataset)
+    datasets = list(itertools.chain(*datasets))
+    return datasets
 
 
 def haversine_dist(blon, blat, slon, slat):
