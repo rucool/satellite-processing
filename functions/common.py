@@ -124,6 +124,19 @@ def format_dates(dt):
     return dt
 
 
+def get_buoy_locations(buoy_list):
+    buoy_lats, buoy_lons = [], []
+    for b in buoy_list:
+        buoy_catalog = ['https://dods.ndbc.noaa.gov/thredds/catalog/data/stdmet/{}/catalog.html'.format(b)]
+        buoy_datasets = get_nc_urls(buoy_catalog)
+        bf = buoy_datasets[-1]  # get the lat and lon from the most recent file for that buoy
+        buoy_ds = xr.open_dataset(bf, mask_and_scale=False)
+        buoy_lats.append(buoy_ds['latitude'].values[0])
+        buoy_lons.append(buoy_ds['longitude'].values[0])
+
+    return buoy_lats, buoy_lons
+
+
 def get_buoy_data(buoy_name, all_years, t0, t1):
     # get buoy SST for entire time range
     buoy_dict = {'t': np.array([], dtype='datetime64[ns]'), 'sst': np.array([]), 'sst_units': '',

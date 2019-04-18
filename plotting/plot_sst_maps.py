@@ -40,18 +40,22 @@ def get_files(md, dt):
     return ff
 
 
-def plotMap(figname, figtitle, latdata, londata, data, lease_area, plan_area):
+def plotMap(figname, figtitle, latdata, londata, data, lease_area, plan_area, blats=None, blons=None):
     fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection=ccrs.PlateCarree()))
-    plt.title(figtitle)
+    plt.title(figtitle, fontsize=17)
     divider = make_axes_locatable(ax)
-    cax = divider.new_horizontal(size='5%', pad=0.05, axes_class=plt.Axes)
+    cax = divider.new_horizontal(size='5%', pad=0.1, axes_class=plt.Axes)
     fig.add_axes(cax)
-    h = ax.pcolor(londata, latdata, data, vmin=18, vmax=28, cmap='jet')
+    h = ax.pcolor(londata, latdata, data, vmin=18, vmax=26, cmap='jet')
+    plt.rcParams.update({'font.size': 14})
     cb = plt.colorbar(h, cax=cax, label='Temperature ($^\circ$C)')
+    cb.ax.tick_params(labelsize=14)
     gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=2, color='gray', alpha=0.5, linestyle='--')
     gl.xlabels_top = False
     gl.ylabels_right = False
-    ax.set_extent([-76, -72.5, 37, 41])  # [min lon, max lon, min lat, max lat]
+    gl.xlabel_style = {'size': 14.5}
+    gl.ylabel_style = {'size': 14.5}
+    ax.set_extent([-76, -72.5, 37.8, 41])  # [min lon, max lon, min lat, max lat]
     LAND = cfeature.NaturalEarthFeature('physical', 'land', '10m', edgecolor='face', facecolor='gainsboro')
 
     state_lines = cfeature.NaturalEarthFeature(
@@ -64,25 +68,33 @@ def plotMap(figname, figtitle, latdata, londata, data, lease_area, plan_area):
     ax.add_feature(cfeature.LAKES, zorder=8, facecolor='white')
     ax.add_feature(cfeature.BORDERS, zorder=6)
     ax.add_feature(state_lines, zorder=7, edgecolor='black')
-    areas = lease_area.plot(ax=ax, color='none', edgecolor='black')
-    areas = plan_area.plot(ax=ax, color='none', edgecolor='darkgray')
+    lease_area.plot(ax=ax, color='none', edgecolor='black')
+    plan_area.plot(ax=ax, color='none', edgecolor='dimgray')
+
+    if blats:
+        # add buoy locations
+        ax.scatter(blons, blats, facecolors='whitesmoke', edgecolors='black', linewidth='2', s=60)
+
     plt.savefig(figname, dpi=300)
     plt.close()
 
 
 model = ['nam', 'avhrr1', 'avhrr3', 'rtg', 'gfs']
-sDir = '/Users/lgarzio/Documents/rucool/satellite/201508_upwelling_analysis'
+sDir = '/Users/lgarzio/Documents/rucool/satellite/201607_upwelling_analysis'
 #rootdir = '/home/lgarzio/rucool/satellite/coldest_pixel/daily_avhrr/composites'
 #sDir = '/home/lgarzio/rucool/satellite/coldest_pixel/daily_avhrr/plots'
-start_date = datetime(2015, 7, 25)   # datetime(2015, 7, 1)
-end_date = datetime(2015, 8, 11)  # datetime(2016, 7, 1)
+start_date = datetime(2016, 7, 22)   # datetime(2015, 7, 1)
+end_date = datetime(2016, 7, 25)  # datetime(2016, 7, 1)
+buoys = ['44009', '44025', '44065']
 
-shape_file_lease = os.path.join(sDir, 'shapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Lease_Areas_10_24_2018.shp')
-shape_file_plan = os.path.join(sDir, 'shapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Wind_Planning_Areas_10_24_2018.shp')
+shape_file_lease = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Lease_Areas_10_24_2018.shp'
+shape_file_plan = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Wind_Planning_Areas_10_24_2018.shp'
 leasing_areas = gpd.read_file(shape_file_lease)
 leasing_areas = leasing_areas.to_crs(crs={'init': 'epsg:4326'})
 planning_areas = gpd.read_file(shape_file_plan)
 planning_areas = planning_areas.to_crs(crs={'init': 'epsg:4326'})
+
+buoy_lats, buoy_lons = cf.get_buoy_locations(buoys)
 
 for n in range(int((end_date - start_date).days)):
     dt = start_date + timedelta(n)
@@ -103,7 +115,7 @@ for n in range(int((end_date - start_date).days)):
             lon_ind = np.logical_and(lon > -78, lon < -68)
             lat_ind = np.logical_and(lat > 35, lat < 45)
 
-            cf.create_dir(os.path.join(sDir, str(dt.year)))
+            cf.create_dir(os.path.join(sDir, ('_'.join((str(dt.year), 'sst')))))
             sname = '{}_sst_{}.png'.format(model[i], dt.strftime('%Y%m%d'))
             sfile = os.path.join(sDir, str(dt.year), sname)
 
@@ -142,4 +154,4 @@ for n in range(int((end_date - start_date).days)):
                 sst = sst - 273.15  # convert K to C
 
             print('plotting {}'.format(ff[0].split('/')[-1]))
-            plotMap(sfile, title, lats.values, lons.values, sst.values, leasing_areas, planning_areas)
+            plotMap(sfile, title, lats.values, lons.values, sst.values, leasing_areas, planning_areas, buoy_lats, buoy_lons)
