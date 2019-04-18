@@ -42,18 +42,20 @@ def get_data(ncfilepath, height):
 def plot_pcolor_quiver(save_file, figtitle, latdata, londata, ws, us, vs, lease_area, plan_area, blats, blons, diff_plot=None):
     sub = 5
     fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection=ccrs.PlateCarree()))
-    plt.title(figtitle)
+    plt.title(figtitle, fontsize=17)
 
     if diff_plot == 'diff_plot':
         #h = ax.pcolor(londata, latdata, ws, vmin=-3.0, vmax=3.0, cmap='seismic')
         h = ax.pcolor(londata, latdata, ws, vmin=-3.0, vmax=3.0, cmap=cmo.balance)
         cblabel = 'Wind Speed Difference (m/s)'
     else:
+        #h = ax.pcolor(londata, latdata, ws, vmin=2.0, vmax=12.0, cmap='jet')
         h = ax.pcolor(londata, latdata, ws, vmin=4.0, vmax=14.0, cmap='jet')
         #h = ax.pcolor(londata, latdata, ws, vmin=4.0, vmax=14.0, cmap=cmo.amp)
         #h = ax.pcolor(londata, latdata, ws, vmin=4.0, vmax=14.0, cmap='YlOrBr')
         cblabel = 'Wind Speed (m/s)'
 
+    plt.rcParams.update({'font.size': 14})
     ax.quiver(londata[::sub, ::sub], latdata[::sub, ::sub], us[::sub, ::sub], vs[::sub, ::sub], cmap='jet',
               scale=40, width=.0015, headlength=3)
 
@@ -61,7 +63,9 @@ def plot_pcolor_quiver(save_file, figtitle, latdata, londata, ws, us, vs, lease_
                       linestyle='--')
     gl.xlabels_top = False
     gl.ylabels_right = False
-    ax.set_extent([-76, -72.5, 37, 41])  # [min lon, max lon, min lat, max lat]
+    gl.xlabel_style = {'size': 14.5}
+    gl.ylabel_style = {'size': 14.5}
+    ax.set_extent([-76, -72.5, 37.8, 41])  # [min lon, max lon, min lat, max lat]
 
     LAND = cfeature.NaturalEarthFeature('physical', 'land', '10m')
 
@@ -87,16 +91,24 @@ def plot_pcolor_quiver(save_file, figtitle, latdata, londata, ws, us, vs, lease_
     cax = divider.new_horizontal(size='5%', pad=0.1, axes_class=plt.Axes)
     fig.add_axes(cax)
     cb = plt.colorbar(h, cax=cax, label=cblabel)
+    cb.ax.tick_params(labelsize=14)
     plt.savefig(save_file, dpi=300)
     plt.close('all')
 
 
 sDir = '/Users/lgarzio/Documents/rucool/satellite/201508_upwelling_analysis/wrf_quiver'
 time_range = cf.range1(19, 21)
-ht = 120  # wind speed height
+ht = 10  # wind speed height
 buoys = ['44009', '44025', '44065']
+ru_wrf_version = 3
 
-rootdir = '/Volumes/boardwalk/coolgroup/ru-wrf/case_studies/20150803/3km/processed/'
+if ru_wrf_version == 4:
+    rootdir = '/Volumes/boardwalk/coolgroup/ru-wrf/testv4/case_studies/20150803/3km/processed/'  # WRF v4.0
+    main_ttl = 'RU-WRF Winds 4.0:'
+else:
+    rootdir = '/Volumes/boardwalk/coolgroup/ru-wrf/case_studies/20150803/3km/processed/'
+    main_ttl = 'RU-WRF Winds:'
+
 cpdir = os.path.join(rootdir, 'coldestpixel')
 rtgdir = os.path.join(rootdir, 'rtg')
 shape_file_lease = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Lease_Areas_10_24_2018.shp'
@@ -106,6 +118,8 @@ leasing_areas = leasing_areas.to_crs(crs={'init': 'epsg:4326'})
 planning_areas = gpd.read_file(shape_file_plan)
 planning_areas = planning_areas.to_crs(crs={'init': 'epsg:4326'})
 buoy_lats, buoy_lons = [], []
+
+cf.create_dir(sDir)
 
 for b in buoys:
     buoy_catalog = ['https://dods.ndbc.noaa.gov/thredds/catalog/data/stdmet/{}/catalog.html'.format(b)]
@@ -125,7 +139,7 @@ for r in time_range:
 
     cp_lat, cp_lon, cp_speed, cp_us, cp_vs, cp_u, cp_v = get_data(cpf[0], ht)
 
-    cptitle = 'RU-WRF Winds: {}m, Coldest Pixel SST'.format(str(ht))
+    cptitle = '{} {}m, Coldest Pixel SST'.format(main_ttl, str(ht))
     title2 = '{} {}{}'.format(datetime.strftime(datetime.strptime(fname.split('_')[2], '%Y%m%d'), '%Y-%m-%d'),
                               fname.split('_')[-1][2:4], 'Z')
     cpfigtitle = '{}\n{}'.format(cptitle, title2)
@@ -137,7 +151,7 @@ for r in time_range:
     rtgf = glob.glob(rtgdir + '/wrfproc_3km' + fend)
     rtg_lat, rtg_lon, rtg_speed, rtg_us, rtg_vs, rtg_u, rtg_v = get_data(rtgf[0], ht)
 
-    rtgtitle = 'RU-WRF Winds: {}m, RTG SST'.format(str(ht))
+    rtgtitle = '{} {}m, RTG SST'.format(main_ttl, str(ht))
     rtgfigtitle = '{}\n{}'.format(rtgtitle, title2)
     rtgfigname = 'rtg{}m_{}'.format(str(ht), fname.split('.')[0])
     rtgsfile = os.path.join(sDir, rtgfigname)
@@ -157,7 +171,7 @@ for r in time_range:
         dmax = np.nanmean(diff_speed) + 5 * stdev
         diff_speed[diff_speed > dmax] = np.nan
 
-    difftitle = 'RU-WRF Winds: {}m, Difference (Coldest Pixel - RTG)'.format(str(ht))
+    difftitle = '{} {}m, Difference (Coldest Pixel - RTG)'.format(main_ttl, str(ht))
     difffigtitle = '{}\n{}'.format(difftitle, title2)
     difffigname = 'difference{}m_{}'.format(str(ht), fname.split('.')[0])
     diffsfile = os.path.join(sDir, difffigname)
