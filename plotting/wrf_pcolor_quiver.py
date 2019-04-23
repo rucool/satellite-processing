@@ -78,6 +78,9 @@ def plot_pcolor_power(save_file, figtitle, latdata, londata, wnd_power, lease_ar
     # add buoy locations
     ax.scatter(blons, blats, facecolors='whitesmoke', edgecolors='black', linewidth='2', s=60)
 
+    # add DOE LIDAR buoy location
+    ax.scatter(-74.401, 39.314, facecolors='magenta', edgecolors='black', linewidth='2', s=60, label='DOE LIDAR')
+
     divider = make_axes_locatable(ax)
     cax = divider.new_horizontal(size='5%', pad=0.1, axes_class=plt.Axes)
     fig.add_axes(cax)
@@ -96,7 +99,8 @@ def plot_pcolor_quiver(save_file, figtitle, latdata, londata, ws, us, vs, lease_
         h = ax.pcolor(londata, latdata, ws, vmin=-3.0, vmax=3.0, cmap=cmo.balance)
         cblabel = 'Wind Speed Difference (m/s)'
     else:
-        h = ax.pcolor(londata, latdata, ws, vmin=4.0, vmax=14.0, cmap='jet')
+        #h = ax.pcolor(londata, latdata, ws, vmin=4.0, vmax=14.0, cmap='jet')
+        h = ax.pcolor(londata, latdata, ws, vmin=4.0, vmax=16.0, cmap='jet')
         cblabel = 'Wind Speed (m/s)'
 
     plt.rcParams.update({'font.size': 14})
@@ -115,6 +119,9 @@ def plot_pcolor_quiver(save_file, figtitle, latdata, londata, ws, us, vs, lease_
     # add buoy locations
     ax.scatter(blons, blats, facecolors='whitesmoke', edgecolors='black', linewidth='2', s=60)
 
+    # add DOE LIDAR buoy location
+    ax.scatter(-74.401, 39.314, facecolors='magenta', edgecolors='black', linewidth='2', s=60, label='DOE LIDAR')
+
     # add colorbar
     divider = make_axes_locatable(ax)
     cax = divider.new_horizontal(size='5%', pad=0.1, axes_class=plt.Axes)
@@ -127,21 +134,25 @@ def plot_pcolor_quiver(save_file, figtitle, latdata, londata, ws, us, vs, lease_
 
 def main(sDir, time_range, ht, buoys, ru_wrf_v, plt_power):
     if ru_wrf_v == 4:
-        rootdir = '/Volumes/boardwalk/coolgroup/ru-wrf/testv4/case_studies/20150803/3km/processed/'  # WRF v4.0
+        #rootdir = '/Volumes/boardwalk/coolgroup/ru-wrf/testv4/case_studies/20150803/3km/processed/'  # WRF v4.0
+        rootdir = '/Volumes/boardwalk/coolgroup/ru-wrf/testv4/case_studies/20160724/3km/processed/'  # WRF v4.0
         main_ttl = 'RU-WRF Winds 4.0:'
     else:
-        rootdir = '/Volumes/boardwalk/coolgroup/ru-wrf/case_studies/20150803/3km/processed/'
-        main_ttl = 'RU-WRF Winds:'
+        #rootdir = '/Volumes/boardwalk/coolgroup/ru-wrf/case_studies/20150803/3km/processed/'
+        rootdir = '/Volumes/boardwalk/coolgroup/ru-wrf/case_studies/20160724/3km/processed/'
+        main_ttl = 'RU-WRF Winds 3.9:'
 
     if plt_power == 'yes':
         power_curve = pd.read_csv('/Users/lgarzio/Documents/rucool/satellite/wrf_power_curve/wrf_lw8mw_power.csv')
         if ru_wrf_v == 4:
             power_main_ttl = 'RU-WRF 4.0 Wind Power:'
         else:
-            power_main_ttl = 'RU-WRF Wind Power:'
+            power_main_ttl = 'RU-WRF 3.9 Wind Power:'
 
     cpdir = os.path.join(rootdir, 'coldestpixel')
     rtgdir = os.path.join(rootdir, 'rtg')
+    #shape_file_lease = '/home/coolgroup/bpu/mapdata/shapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Lease_Areas_10_24_2018.shp'
+    #shape_file_plan = '/home/coolgroup/bpu/mapdata/shapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Wind_Planning_Areas_10_24_2018.shp'
     shape_file_lease = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Lease_Areas_10_24_2018.shp'
     shape_file_plan = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Wind_Planning_Areas_10_24_2018.shp'
     leasing_areas = gpd.read_file(shape_file_lease)
@@ -225,10 +236,10 @@ def main(sDir, time_range, ht, buoys, ru_wrf_v, plt_power):
 
 if __name__ == '__main__':
     pd.set_option('display.width', 320, "display.max_columns", 10)  # for display in pycharm console
-    save_dir = '/Users/lgarzio/Documents/rucool/satellite/201508_upwelling_analysis/wrf_windspeed_power_120m'
-    hour_time_range = cf.range1(19, 21)
+    save_dir = '/Users/lgarzio/Documents/rucool/satellite/20160724_upwelling_analysis/wrf4.0_windspeed_power_120m_test'
+    hour_time_range = cf.range1(00, 30)
     wndsp_height = 120  # wind speed height
     ndbc_buoys = ['44009', '44025', '44065']
-    ru_wrf_version = 3  # options: 3, 4
+    ru_wrf_version = 4  # options: 3, 4
     plot_power = 'yes'  # options: 'yes', 'no'
     main(save_dir, hour_time_range, wndsp_height, ndbc_buoys, ru_wrf_version, plot_power)
