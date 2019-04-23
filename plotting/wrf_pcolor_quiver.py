@@ -71,48 +71,6 @@ def plot_pcolor_power(save_file, figtitle, latdata, londata, wnd_power, lease_ar
     plt.close('all')
 
 
-def plot_pcolor_quiver(save_file, figtitle, latdata, londata, ws, us, vs, lease_area, plan_area, blats, blons, diff_plot=None):
-    sub = 5
-    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection=ccrs.PlateCarree()))
-    plt.title(figtitle, fontsize=17)
-
-    if diff_plot == 'diff_plot':
-        h = ax.pcolor(londata, latdata, ws, vmin=-3.0, vmax=3.0, cmap=cmo.balance)
-        cblabel = 'Wind Speed Difference (m/s)'
-    else:
-        #h = ax.pcolor(londata, latdata, ws, vmin=4.0, vmax=14.0, cmap='jet')
-        h = ax.pcolor(londata, latdata, ws, vmin=4.0, vmax=16.0, cmap='jet')
-        cblabel = 'Wind Speed (m/s)'
-
-    plt.rcParams.update({'font.size': 14})
-    ax.quiver(londata[::sub, ::sub], latdata[::sub, ::sub], us[::sub, ::sub], vs[::sub, ::sub], cmap='jet',
-              scale=40, width=.0015, headlength=3)
-
-    ax = pf.add_map_features(ax)
-
-    lease_area.plot(ax=ax, color='none', edgecolor='black')
-    plan_area.plot(ax=ax, color='none', edgecolor='dimgray')
-
-    if diff_plot != 'diff_plot':
-        CS = ax.contour(londata, latdata, ws, [0, 12.5], colors='whitesmoke', linewidths=2)
-        ax.clabel(CS, inline=1, fontsize=10.5, fmt='%.1f')
-
-    # add buoy locations
-    ax.scatter(blons, blats, facecolors='whitesmoke', edgecolors='black', linewidth='2', s=60)
-
-    # add DOE LIDAR buoy location
-    ax.scatter(-74.401, 39.314, facecolors='magenta', edgecolors='black', linewidth='2', s=60, label='DOE LIDAR')
-
-    # add colorbar
-    divider = make_axes_locatable(ax)
-    cax = divider.new_horizontal(size='5%', pad=0.1, axes_class=plt.Axes)
-    fig.add_axes(cax)
-    cb = plt.colorbar(h, cax=cax, label=cblabel)
-    cb.ax.tick_params(labelsize=14)
-    plt.savefig(save_file, dpi=300)
-    plt.close('all')
-
-
 def main(sDir, time_range, ht, buoys, ru_wrf_v, plt_power):
     if ru_wrf_v == 4:
         #rootdir = '/Volumes/boardwalk/coolgroup/ru-wrf/testv4/case_studies/20150803/3km/processed/'  # WRF v4.0
@@ -157,8 +115,8 @@ def main(sDir, time_range, ht, buoys, ru_wrf_v, plt_power):
         cpfigtitle = '{}\n{}'.format(cptitle, title2)
         cpfigname = 'coldestpixel{}m_{}'.format(str(ht), fname.split('.')[0])
         cpsfile = os.path.join(sDir, cpfigname)
-        plot_pcolor_quiver(cpsfile, cpfigtitle, cp_lat, cp_lon, cp_speed, cp_us, cp_vs, leasing_areas, planning_areas,
-                           buoy_lats, buoy_lons)
+        pf.plot_pcolor_quiver(cpsfile, cpfigtitle, cp_lat, cp_lon, cp_speed, cp_us, cp_vs, leasing_areas,
+                              planning_areas, buoy_lats, buoy_lons, 'wrf')
 
         if plt_power == 'yes':
             cp_wind_power = np.interp(cp_speed, power_curve['Wind Speed'], power_curve['Power'])
@@ -177,8 +135,8 @@ def main(sDir, time_range, ht, buoys, ru_wrf_v, plt_power):
         rtgfigtitle = '{}\n{}'.format(rtgtitle, title2)
         rtgfigname = 'rtg{}m_{}'.format(str(ht), fname.split('.')[0])
         rtgsfile = os.path.join(sDir, rtgfigname)
-        plot_pcolor_quiver(rtgsfile, rtgfigtitle, rtg_lat, rtg_lon, rtg_speed, rtg_us, rtg_vs, leasing_areas,
-                           planning_areas, buoy_lats, buoy_lons)
+        pf.plot_pcolor_quiver(rtgsfile, rtgfigtitle, rtg_lat, rtg_lon, rtg_speed, rtg_us, rtg_vs, leasing_areas,
+                              planning_areas, buoy_lats, buoy_lons, 'wrf')
 
         if plt_power == 'yes':
             rtg_wind_power = np.interp(rtg_speed, power_curve['Wind Speed'], power_curve['Power'])
@@ -207,8 +165,8 @@ def main(sDir, time_range, ht, buoys, ru_wrf_v, plt_power):
         difffigtitle = '{}\n{}'.format(difftitle, title2)
         difffigname = 'difference{}m_{}'.format(str(ht), fname.split('.')[0])
         diffsfile = os.path.join(sDir, difffigname)
-        plot_pcolor_quiver(diffsfile, difffigtitle, rtg_lat, rtg_lon, diff_speed, diff_us, diff_vs, leasing_areas,
-                           planning_areas, buoy_lats, buoy_lons, 'diff_plot')
+        pf.plot_pcolor_quiver(diffsfile, difffigtitle, rtg_lat, rtg_lon, diff_speed, diff_us, diff_vs, leasing_areas,
+                              planning_areas, buoy_lats, buoy_lons, 'wrf', diff_plot='yes')
 
         # power difference
         if plt_power == 'yes':
@@ -218,7 +176,7 @@ def main(sDir, time_range, ht, buoys, ru_wrf_v, plt_power):
             diff_powerfigname = 'difference_power{}m_{}'.format(str(ht), fname.split('.')[0])
             diff_powersfile = os.path.join(sDir, diff_powerfigname)
             plot_pcolor_power(diff_powersfile, difffig_powertitle, rtg_lat, rtg_lon, diff_power, leasing_areas,
-                              planning_areas, buoy_lats, buoy_lons, 'diff_plot')
+                              planning_areas, buoy_lats, buoy_lons, diff_plot='yes')
 
 
 if __name__ == '__main__':
