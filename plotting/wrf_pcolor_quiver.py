@@ -39,12 +39,17 @@ def get_data(ncfilepath, height):
     return lat, lon, speed, us, vs, u, v
 
 
-def plot_pcolor_power(save_file, figtitle, latdata, londata, wnd_power, lease_area, plan_area, blats, blons):
+def plot_pcolor_power(save_file, figtitle, latdata, londata, wnd_power, lease_area, plan_area, blats, blons, diff_plot=None):
     fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(projection=ccrs.PlateCarree()))
     plt.subplots_adjust(right=0.87)
     plt.title(figtitle, fontsize=17)
-    h = ax.pcolor(londata, latdata, wnd_power, cmap='OrRd')
-    cblabel = 'Estimated 8MW Wind Power (kW)'
+
+    if diff_plot == 'diff_plot':
+        h = ax.pcolor(londata, latdata, wnd_power, vmin=-8000, vmax=8000, cmap=cmo.curl)
+        cblabel = 'Estimated 8MW Wind Power Difference (kW)'
+    else:
+        h = ax.pcolor(londata, latdata, wnd_power, cmap='OrRd')
+        cblabel = 'Estimated 8MW Wind Power (kW)'
     plt.rcParams.update({'font.size': 14})
 
     ax = pf.add_map_features(ax)
@@ -121,9 +126,9 @@ def main(sDir, time_range, ht, buoys, ru_wrf_v, plt_power):
     if plt_power == 'yes':
         power_curve = pd.read_csv('/Users/lgarzio/Documents/rucool/satellite/wrf_power_curve/wrf_lw8mw_power.csv')
         if ru_wrf_v == 4:
-            power_main_ttl = 'RU-WRF 4.0 Wind Power:'
+            power_main_ttl = 'RU-WRF Wind Power 4.0:'
         else:
-            power_main_ttl = 'RU-WRF 3.9 Wind Power:'
+            power_main_ttl = 'RU-WRF Wind Power 3.9:'
 
     cpdir = os.path.join(rootdir, 'coldestpixel')
     rtgdir = os.path.join(rootdir, 'rtg')
@@ -184,7 +189,7 @@ def main(sDir, time_range, ht, buoys, ru_wrf_v, plt_power):
             plot_pcolor_power(rtg_power_sname, rtg_p_ttl, rtg_lat, rtg_lon, rtg_wind_power, leasing_areas,
                               planning_areas, buoy_lats, buoy_lons)
 
-        # difference
+        # wind speed difference
         diff_u = cp_u - rtg_u
         diff_v = cp_v - rtg_v
 
@@ -198,20 +203,30 @@ def main(sDir, time_range, ht, buoys, ru_wrf_v, plt_power):
             dmax = np.nanmean(diff_speed) + 5 * stdev
             diff_speed[diff_speed > dmax] = np.nan
 
-        difftitle = '{} {}m, Difference (Coldest Pixel - RTG)'.format(main_ttl, str(ht))
+        difftitle = '{} {}m, Difference (ColdPix - RTG)'.format(main_ttl, str(ht))
         difffigtitle = '{}\n{}'.format(difftitle, title2)
         difffigname = 'difference{}m_{}'.format(str(ht), fname.split('.')[0])
         diffsfile = os.path.join(sDir, difffigname)
         plot_pcolor_quiver(diffsfile, difffigtitle, rtg_lat, rtg_lon, diff_speed, diff_us, diff_vs, leasing_areas,
                            planning_areas, buoy_lats, buoy_lons, 'diff_plot')
 
+        # power difference
+        if plt_power == 'yes':
+            diff_power = cp_wind_power - rtg_wind_power
+            diff_power_title = '{} {}m, Difference (ColdPix - RTG)'.format(power_main_ttl, str(ht))
+            difffig_powertitle = '{}\n{}'.format(diff_power_title, title2)
+            diff_powerfigname = 'difference_power{}m_{}'.format(str(ht), fname.split('.')[0])
+            diff_powersfile = os.path.join(sDir, diff_powerfigname)
+            plot_pcolor_power(diff_powersfile, difffig_powertitle, rtg_lat, rtg_lon, diff_power, leasing_areas,
+                              planning_areas, buoy_lats, buoy_lons, 'diff_plot')
+
 
 if __name__ == '__main__':
     pd.set_option('display.width', 320, "display.max_columns", 10)  # for display in pycharm console
-    save_dir = '/Users/lgarzio/Documents/rucool/satellite/20160724_upwelling_analysis/wrf4.0_windspeed_power_120m_test'
+    save_dir = '/Users/lgarzio/Documents/rucool/satellite/20160724_upwelling_analysis/wrf3.9_windspeed_power_120m'
     hour_time_range = cf.range1(00, 30)
     wndsp_height = 120  # wind speed height
     ndbc_buoys = ['44009', '44025', '44065']
-    ru_wrf_version = 4  # options: 3, 4
+    ru_wrf_version = 3  # options: 3, 4
     plot_power = 'yes'  # options: 'yes', 'no'
     main(save_dir, hour_time_range, wndsp_height, ndbc_buoys, ru_wrf_version, plot_power)
