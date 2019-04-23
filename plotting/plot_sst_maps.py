@@ -11,11 +11,10 @@ import glob
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-import cartopy.feature as cfeature
 import xarray as xr
-import geopandas as gpd
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import functions.common as cf
+import functions.plotting as pf
 
 
 def get_files(md, dt):
@@ -50,24 +49,9 @@ def plotMap(figname, figtitle, latdata, londata, data, lease_area, plan_area, bl
     plt.rcParams.update({'font.size': 14})
     cb = plt.colorbar(h, cax=cax, label='Temperature ($^\circ$C)')
     cb.ax.tick_params(labelsize=14)
-    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=2, color='gray', alpha=0.5, linestyle='--')
-    gl.xlabels_top = False
-    gl.ylabels_right = False
-    gl.xlabel_style = {'size': 14.5}
-    gl.ylabel_style = {'size': 14.5}
-    ax.set_extent([-76, -72.5, 37.8, 41])  # [min lon, max lon, min lat, max lat]
-    LAND = cfeature.NaturalEarthFeature('physical', 'land', '10m', edgecolor='face', facecolor='gainsboro')
 
-    state_lines = cfeature.NaturalEarthFeature(
-        category='cultural',
-        name='admin_1_states_provinces_lines',
-        scale='50m',
-        facecolor='none')
+    ax = pf.add_map_features(ax, land_options=['face', 'gainsboro'])
 
-    ax.add_feature(LAND, zorder=5, edgecolor='black')
-    ax.add_feature(cfeature.LAKES, zorder=8, facecolor='white')
-    ax.add_feature(cfeature.BORDERS, zorder=6)
-    ax.add_feature(state_lines, zorder=7, edgecolor='black')
     lease_area.plot(ax=ax, color='none', edgecolor='black')
     plan_area.plot(ax=ax, color='none', edgecolor='dimgray')
 
@@ -87,12 +71,9 @@ start_date = datetime(2016, 7, 22)   # datetime(2015, 7, 1)
 end_date = datetime(2016, 7, 25)  # datetime(2016, 7, 1)
 buoys = ['44009', '44025', '44065']
 
-shape_file_lease = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Lease_Areas_10_24_2018.shp'
-shape_file_plan = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Wind_Planning_Areas_10_24_2018.shp'
-leasing_areas = gpd.read_file(shape_file_lease)
-leasing_areas = leasing_areas.to_crs(crs={'init': 'epsg:4326'})
-planning_areas = gpd.read_file(shape_file_plan)
-planning_areas = planning_areas.to_crs(crs={'init': 'epsg:4326'})
+#boem_rootdir = '/home/coolgroup/bpu/mapdata/shapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018'
+boem_rootdir = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018'
+leasing_areas, planning_areas = cf.boem_shapefiles(boem_rootdir)
 
 buoy_lats, buoy_lons = cf.get_buoy_locations(buoys)
 
@@ -115,9 +96,9 @@ for n in range(int((end_date - start_date).days)):
             lon_ind = np.logical_and(lon > -78, lon < -68)
             lat_ind = np.logical_and(lat > 35, lat < 45)
 
-            cf.create_dir(os.path.join(sDir, ('_'.join((str(dt.year), 'sst')))))
+            cf.create_dir(os.path.join(sDir, 'sst_plots'))
             sname = '{}_sst_{}.png'.format(model[i], dt.strftime('%Y%m%d'))
-            sfile = os.path.join(sDir, str(dt.year), sname)
+            sfile = os.path.join(sDir, 'sst_plots', sname)
 
             if model[i] == 'avhrr1':
                 sst = np.squeeze(sstnc[vname][:, :, lat_ind, lon_ind])

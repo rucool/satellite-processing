@@ -11,36 +11,12 @@ import glob
 from datetime import datetime
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-import cartopy.feature as cfeature
 import xarray as xr
 from oceans.ocfis import uv2spdir, spdir2uv
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import geopandas as gpd
 import cmocean.cm as cmo
 import functions.common as cf
-
-
-def add_map_features(ax):
-    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle='--')
-    gl.xlabels_top = False
-    gl.ylabels_right = False
-    gl.xlabel_style = {'size': 14.5}
-    gl.ylabel_style = {'size': 14.5}
-    ax.set_extent([-76, -72.5, 37.8, 41])  # [min lon, max lon, min lat, max lat]
-
-    land = cfeature.NaturalEarthFeature('physical', 'land', '10m')
-
-    state_lines = cfeature.NaturalEarthFeature(
-        category='cultural',
-        name='admin_1_states_provinces_lines',
-        scale='50m',
-        facecolor='none')
-
-    ax.add_feature(land, zorder=5, edgecolor='black', facecolor='none')
-    ax.add_feature(cfeature.BORDERS, zorder=6)
-    ax.add_feature(state_lines, zorder=7, edgecolor='black')
-
-    return ax
+import functions.plotting as pf
 
 
 def get_data(ncfilepath, height):
@@ -71,7 +47,7 @@ def plot_pcolor_power(save_file, figtitle, latdata, londata, wnd_power, lease_ar
     cblabel = 'Estimated 8MW Wind Power (kW)'
     plt.rcParams.update({'font.size': 14})
 
-    ax = add_map_features(ax)
+    ax = pf.add_map_features(ax)
     lease_area.plot(ax=ax, color='none', edgecolor='black')
     plan_area.plot(ax=ax, color='none', edgecolor='dimgray')
 
@@ -107,7 +83,7 @@ def plot_pcolor_quiver(save_file, figtitle, latdata, londata, ws, us, vs, lease_
     ax.quiver(londata[::sub, ::sub], latdata[::sub, ::sub], us[::sub, ::sub], vs[::sub, ::sub], cmap='jet',
               scale=40, width=.0015, headlength=3)
 
-    ax = add_map_features(ax)
+    ax = pf.add_map_features(ax)
 
     lease_area.plot(ax=ax, color='none', edgecolor='black')
     plan_area.plot(ax=ax, color='none', edgecolor='dimgray')
@@ -151,14 +127,10 @@ def main(sDir, time_range, ht, buoys, ru_wrf_v, plt_power):
 
     cpdir = os.path.join(rootdir, 'coldestpixel')
     rtgdir = os.path.join(rootdir, 'rtg')
-    #shape_file_lease = '/home/coolgroup/bpu/mapdata/shapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Lease_Areas_10_24_2018.shp'
-    #shape_file_plan = '/home/coolgroup/bpu/mapdata/shapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Wind_Planning_Areas_10_24_2018.shp'
-    shape_file_lease = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Lease_Areas_10_24_2018.shp'
-    shape_file_plan = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018/BOEM_Wind_Planning_Areas_10_24_2018.shp'
-    leasing_areas = gpd.read_file(shape_file_lease)
-    leasing_areas = leasing_areas.to_crs(crs={'init': 'epsg:4326'})
-    planning_areas = gpd.read_file(shape_file_plan)
-    planning_areas = planning_areas.to_crs(crs={'init': 'epsg:4326'})
+
+    #boem_rootdir = '/home/coolgroup/bpu/mapdata/shapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018'
+    boem_rootdir = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018'
+    leasing_areas, planning_areas = cf.boem_shapefiles(boem_rootdir)
 
     cf.create_dir(sDir)
 
