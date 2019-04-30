@@ -99,30 +99,36 @@ def main(start, end, buoys, avgrad, sDir):
             buoy_full = pd.DataFrame(data={'time': buoy_dict['t'], 'buoy_sst': buoy_dict['sst']})
             buoy_full.drop_duplicates(inplace=True)
             buoy_full = buoy_full.dropna()
-            buoy_daily = buoy_full.resample('d', on='time').median().dropna(how='all').reset_index()  # resample daily
+            #buoy_daily = buoy_full.resample('d', on='time').median().dropna(how='all').reset_index()  # resample daily
 
-            if len(buoy_daily) > 1:
+            if len(buoy_full) > 1:
                 buoylon = buoy_dict['lon']
                 buoylat = buoy_dict['lat']
 
                 # get SST data "at" buoy
                 cp_data = {'t': np.array([], dtype='datetime64[ns]'), 'sst': np.array([])}
                 for tm in times:
-                    dd = datetime.strftime(tm, '%Y%m%d')
-                    cp_file = glob.glob('{}{}/avhrr_coldest-pixel_{}.nc'.format(cp_dir, str(tm.year), dd))
-                    if len(cp_file) == 1:
-                        cp_data['t'] = np.append(cp_data['t'], np.datetime64(tm))
-                        svalue = cf.append_satellite_sst_data(cp_file[0], buoylat, buoylon, avgrad, 'daily_avhrr', 'sst')
-                        cp_data['sst'] = np.append(cp_data['sst'], svalue)
+                    fmtm = np.datetime64(datetime.strftime(tm, '%Y-%m-%d'))
+                    mask = (buoy_full['time'] >= tm) & (buoy_full['time'] < tm + timedelta(days=1))
+                    if sum(mask) > 0:  # if there is any buoy data for the time period
+                        buoy_full.loc[mask, 'day'] = tm
+                        dd = datetime.strftime(tm, '%Y%m%d')
+                        cp_file = glob.glob('{}{}/avhrr_coldest-pixel_{}.nc'.format(cp_dir, str(tm.year), dd))
+                        if len(cp_file) == 1:
+                            cp_data['t'] = np.append(cp_data['t'], np.repeat(fmtm, np.sum(mask)))
+                            svalue = cf.append_satellite_sst_data(cp_file[0], buoylat, buoylon, avgrad, 'daily_avhrr', 'sst')
+                            cp_data['sst'] = np.append(cp_data['sst'], np.repeat(svalue, np.sum(mask)))
 
-                cp_df = pd.DataFrame(data={'time': cp_data['t'], 'sat_sst': cp_data['sst']})
+                cp_df = pd.DataFrame(data={'day': cp_data['t'], 'sat_sst': cp_data['sst']})
                 cp_df = cp_df.dropna()
+                sat_plt = cp_df.drop_duplicates(subset=['day', 'sat_sst'])  # dataframe for plotting
 
                 if len(cp_df) > 0:
                     # merge the buoy and satellite dataframes only where there are data for both
-                    df = pd.merge(buoy_daily, cp_df, on='time')
+                    df = pd.merge(buoy_full, cp_df, on='day')
                     df.sort_values('time', inplace=True)
                     df = df.reset_index(drop=True)
+                    df = df.drop_duplicates(subset=['time', 'buoy_sst', 'day', 'sat_sst'])
 
                     if len(df) > 0:
                         buoy_data = np.array(df['buoy_sst'])
@@ -153,14 +159,14 @@ def main(start, end, buoys, avgrad, sDir):
                              np.nanmean(abs(diff)), np.std(abs(diff)), np.percentile(abs(diff), 25),
                              np.percentile(abs(diff), 50), np.percentile(abs(diff), 75), diffx])
 
-                        save_dir = os.path.join(sDir, 'coldestpix', buoy)
+                        save_dir = os.path.join(sDir, buoy)
                         cf.create_dir(save_dir)
                         sname = '{}_sst_comparison_{}_coldpix'.format(buoy, t1.strftime('%Y%m'))
                         fig, ax = plt.subplots()
                         plt.grid()
                         ax = plot_buoy_full(ax, buoy_full['time'], buoy_full['buoy_sst'], buoy)
-                        ax = plot_buoy_daily(ax, df['time'], df['buoy_sst'], buoy)
-                        ax = plot_satdata(ax, df['time'], df['sat_sst'], rmse, n)
+                        #ax = plot_buoy_daily(ax, df['time'], df['buoy_sst'], buoy)
+                        ax = plot_satdata(ax, sat_plt['day'], sat_plt['sat_sst'], rmse, n)
                         ax.set_ylabel('Sea Surface Temperature (Celsius)', fontsize=9)
                         pf.format_date_axis(ax, fig)
                         pf.y_axis_disable_offset(ax)
@@ -168,7 +174,7 @@ def main(start, end, buoys, avgrad, sDir):
                         pf.save_fig(save_dir, sname)
 
     sdf = pd.DataFrame(summary, columns=sheaders)
-    sdf.to_csv('{}/{}/coldpix_buoy_comparison.csv'.format(sDir, 'coldestpix'), index=False)
+    sdf.to_csv('{}/coldpix_buoy_comparison.csv'.format(sDir), index=False)
 
     stats = []
     [__, __, __, __, diff, rmse, n] = cf.statistics(all_data['bdata'], all_data['satdata'])
@@ -193,7 +199,7 @@ def main(start, end, buoys, avgrad, sDir):
                      'sd_abs_diff', 'q1_abs_diff', 'median_abs_diff', 'q3_abs_diff', 'RMSE', 'n', 'buoys']
     statsdf = pd.DataFrame(stats, columns=stats_headers)
     statsdf.sort_values('year-month', inplace=True)
-    statsdf.to_csv('{}/{}/coldpix_buoy_comparison_overallstats.csv'.format(sDir, 'coldestpix'), index=False)
+    statsdf.to_csv('{}/coldpix_buoy_comparison_overallstats.csv'.format(sDir), index=False)
 
 
 if __name__ == '__main__':
@@ -204,6 +210,6 @@ if __name__ == '__main__':
              '44017', '44018', '44020', '44025', '44027', '44065']
     #buoys = ['44009', '44017', '44065']  # buoys in upwelling zone
     avgrad = 'closestwithin5'
-    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp'
+    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/daily_coldestpix'
     #sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp'  # boardwalk
     main(start, end, buoys, avgrad, sDir)
