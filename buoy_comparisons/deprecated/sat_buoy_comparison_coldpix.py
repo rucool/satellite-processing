@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """
 Created by Lori Garzio on 4/29/2019
-@brief compare buoy data with coldest pixel composite satellite SST data, by month
+@brief compare buoy data with coldest pixel composite satellite SST data, by month (duplicate each satellite point for
+each buoy point)
 @usage
 sDir: location to save plots
 avgrad: radius around the buoy from which to grab satellite data. options: x (average all data within radius x km of

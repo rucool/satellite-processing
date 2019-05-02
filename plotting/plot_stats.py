@@ -21,6 +21,7 @@ def main(sdf, statsdf, sDir, model):
     tick_size = 10.5
     ylabel_size = 11
     legend_fontsize = 8
+    sample_size = 3
     # plot monthly RMSEs for each buoy and overall
     buoys = np.unique(sdf['buoy']).tolist()
     n_buoys = len(buoys)
@@ -30,10 +31,7 @@ def main(sdf, statsdf, sDir, model):
     fig.subplots_adjust(right=0.84)
     plt.grid()
     for i in range(len(buoys)):
-        if model == 'AVHRR' or model == 'ColdPix':
-            sdfb = sdf[(sdf['buoy'] == buoys[i]) & (sdf['n'] > 5)]
-        else:
-            sdfb = sdf[(sdf['buoy'] == buoys[i]) & (sdf['n_model'] > 5)]
+        sdfb = sdf[(sdf['buoy'] == buoys[i]) & (sdf['n'] > sample_size)]
         if len(sdfb) > 0:
             c = colors[i]
             x = sdfb['year-month'].map(lambda t: dt.datetime.strptime(str(t), '%Y%m'))
@@ -46,11 +44,9 @@ def main(sdf, statsdf, sDir, model):
     ax.set_ylabel('RMSE', fontsize=ylabel_size)
     ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fontsize=legend_fontsize)
     if model == 'AVHRR':
-        plt.title('{} Passes vs. Buoy SST (n>5)'.format(model), fontsize=ttl_size)
-    elif model == 'ColdPix':
-        plt.title('Coldest Pixel vs. Buoy SST (n>5)', fontsize=ttl_size)
+        plt.title('{} Passes vs. Buoy SST'.format(model), fontsize=ttl_size)
     else:
-        plt.title('{} vs. Buoy SST (from model time period, n>5)'.format(model), fontsize=ttl_size)
+        plt.title('{} vs. Buoy SST'.format(model), fontsize=ttl_size)
     pf.format_date_axis_month(ax, fig)
     plt.ylim([0, 2.5])
     plt.yticks(fontsize=tick_size)
@@ -62,11 +58,9 @@ def main(sdf, statsdf, sDir, model):
     monthly_data = {}
     months = np.unique(sdf['year-month']).tolist()
     for month in months:
-        if model == 'AVHRR' or model == 'ColdPix':
-            sdf_month = sdf[(sdf['year-month'] == month) & (sdf['n'] > 5)]
-        else:
-            sdf_month = sdf[(sdf['year-month'] == month) & (sdf['n_model'] > 5)]
-        monthly_data[month] = dict(rmse_min=np.nanmin(sdf_month['RMSE']), rmse_max=np.nanmax(sdf_month['RMSE']))
+        sdf_month = sdf[(sdf['year-month'] == month) & (sdf['n'] > sample_size)]
+        if len(sdf_month) > 0:
+            monthly_data[month] = dict(rmse_min=np.nanmin(sdf_month['RMSE']), rmse_max=np.nanmax(sdf_month['RMSE']))
 
     mdf = pd.DataFrame.from_dict(monthly_data, orient='index')
     fig, ax = plt.subplots()
@@ -76,11 +70,9 @@ def main(sdf, statsdf, sDir, model):
     ax.set_ylabel('RMSE', fontsize=ylabel_size)
     ax.legend(loc='best', fontsize=legend_fontsize)
     if model == 'AVHRR':
-        plt.title('{} Passes vs. Buoy SST (n>5)'.format(model), fontsize=ttl_size)
-    elif model == 'ColdPix':
-        plt.title('Coldest Pixel vs. Buoy SST (n>5)', fontsize=ttl_size)
+        plt.title('{} Passes vs. Buoy SST'.format(model), fontsize=ttl_size)
     else:
-        plt.title('{} vs. Buoy SST (from model time period, n>5)'.format(model), fontsize=ttl_size)
+        plt.title('{} vs. Buoy SST'.format(model), fontsize=ttl_size)
     pf.format_date_axis_month(ax, fig)
     plt.ylim([0, 2.5])
     plt.yticks(fontsize=tick_size)
@@ -102,11 +94,9 @@ def main(sdf, statsdf, sDir, model):
     if model == 'AVHRR':
         #ttl = '{} individual passes minus buoy SST:\nMedian Monthly Difference with Quartiles'.format(model)
         ttl = '{} Passes Minus Buoy SST'.format(model)
-    elif model == 'ColdPix':
-        ttl = 'Coldest Pixel vs. Buoy SST'
     else:
         #ttl = '{} minus buoy SST (from model time period):\nMedian Monthly Difference with Quartiles'.format(model)
-        ttl = '{} Minus Buoy SST (from model time period)'.format(model)
+        ttl = '{} Minus Buoy SST'.format(model)
     plt.title(ttl, fontsize=ttl_size)
     pf.format_date_axis_month(ax, fig)
     plt.ylim([-1.5, 1.5])

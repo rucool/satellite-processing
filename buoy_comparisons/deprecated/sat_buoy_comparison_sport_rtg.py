@@ -27,7 +27,7 @@ def combine_datasets(sat_data, buoy_full, all_data, buoy, monthly_data, month, s
         df = pd.merge(buoy_full, sat_df, on='model_time', how='outer')
         #df = df.loc[:, ~df.columns.duplicated()]  # drop duplicated columns
         df.dropna(axis=0, subset=['buoy_sst', 'sat_sst', 'model_time'], inplace=True)
-        df.drop_duplicates(inplace=True) # drop duplicated rows
+        df.drop_duplicates(inplace=True)  # drop duplicated rows
 
         if len(df) > 0:
             bdata = np.array(df['buoy_sst'])
@@ -73,7 +73,7 @@ def create_summary_output(summary, mod, all_data, monthly_data):
     headers = ['buoy', 'year-month', 'mean_buoy', 'sd_buoy', 'mean_sat', 'sd_sat', 'RMSE', 'n', 'n_model', 'mean_diff',
                'sd_diff', 'q1_diff', 'median_diff', 'q3_diff', 'diff (sat-buoy)']
     sdf = pd.DataFrame(summary, columns=headers)
-    sdf.to_csv('{}/{}/{}_buoy_futurecomparison.csv'.format(sDir, 'sport_rtg_future_comparison', mod),
+    sdf.to_csv('{}/{}/{}_buoy_futurecomparison.csv'.format(sDir, 'sport_rtg_future_comparison_upwelling', mod),
                index=False)
 
     stats = []
@@ -95,7 +95,7 @@ def create_summary_output(summary, mod, all_data, monthly_data):
                      'max_diff', 'RMSE', 'n', 'buoys']
     statsdf = pd.DataFrame(stats, columns=stats_headers)
     statsdf.sort_values('year-month', inplace=True)
-    statsdf.to_csv('{}/{}/{}_buoy_overallstats.csv'.format(sDir, 'sport_rtg_future_comparison', mod),
+    statsdf.to_csv('{}/{}/{}_buoy_overallstats.csv'.format(sDir, 'sport_rtg_future_comparison_upwelling', mod),
                    index=False)
 
 
@@ -117,8 +117,8 @@ def plot_sport(axis, x, y, rmse, n):
 
 
 def main(start, end, buoys, avgrad, sDir):
-    #bpudatadir = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/'
-    bpudatadir = '/home/coolgroup/bpu/wrf/data/'  # boardwalk
+    bpudatadir = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/'
+    #bpudatadir = '/home/coolgroup/bpu/wrf/data/'  # boardwalk
     models = ['sport', 'rtg']
 
     summary_sport = []
@@ -246,7 +246,7 @@ def main(start, end, buoys, avgrad, sDir):
                 else:
                     buoy_plot = df_rtg
 
-                save_dir = os.path.join(sDir, 'sport_rtg_future_comparison', buoy)
+                save_dir = os.path.join(sDir, 'sport_rtg_future_comparison_upwelling', buoy)
                 cf.create_dir(save_dir)
                 sname = '{}_sst_comparison_sport_rtg_{}'.format(buoy, month)
                 fig, ax = plt.subplots()
@@ -271,9 +271,10 @@ if __name__ == '__main__':
     pd.set_option('display.width', 320, "display.max_columns", 10)  # for display in pycharm console
     start = '6-1-2015'
     end = '5-31-2016'
-    buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
-             '44017', '44018', '44020', '44025', '44027', '44065']
+    # buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
+    #          '44017', '44018', '44020', '44025', '44027', '44065']
+    buoys = ['44009', '44017', '44065']  # buoys in upwelling zone
     avgrad = 'closestwithin5'
-    #sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp'
-    sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp'  # boardwalk
+    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp'
+    #sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp'  # boardwalk
     main(start, end, buoys, avgrad, sDir)

@@ -34,11 +34,17 @@ def plot_buoy_full(axis, x, y, buoy):
 
 
 def main(start, end, buoys, avgrad, sDir):
-    #avhrr_dir = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/avhrr_nc/'
-    avhrr_dir = '/home/coolgroup/bpu/wrf/data/avhrr_nc/'  # boardwalk
+    avhrr_dir = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/avhrr_nc/'
+    #avhrr_dir = '/home/coolgroup/bpu/wrf/data/avhrr_nc/'  # boardwalk
     # daylight hours limits for each month
     H0_lst = [14, 14, 13, 13, 12, 12, 12, 12, 13, 13, 14, 14]
     H1_lst = [20, 20, 20, 22, 22, 23, 23, 23, 21, 20, 20, 20]
+
+    if len(buoys) == 3:
+        save_dir_all = os.path.join(sDir, 'AVHRR_individual_passes_upwelling')
+    else:
+        save_dir_all = os.path.join(sDir, 'AVHRR_individual_passes')
+    cf.create_dir(save_dir_all)
 
     sheaders = ['buoy', 'year-month', 'mean_buoy', 'sd_buoy', 'mean_avhrr', 'sd_avhrr', 'RMSE', 'n',
                 'mean_diff', 'sd_diff', 'q1_diff', 'median_diff', 'q3_diff', 'mean_abs_diff', 'sd_abs_diff',
@@ -102,6 +108,7 @@ def main(start, end, buoys, avgrad, sDir):
                 avhrr_data = {'t': np.array([], dtype='datetime64[ns]'), 'sst': np.array([])}
                 for tm in times:
                     dd = datetime.strftime(tm, '%y%m%d')
+                    #print(dd)
                     avhrr_files = []
                     for file in os.listdir(avhrr_dir):
                         if file.startswith(dd) and file.endswith('.CF.nc'):
@@ -111,7 +118,6 @@ def main(start, end, buoys, avgrad, sDir):
                         H0 = H0_lst[tm.month - 1]
                         H1 = H1_lst[tm.month - 1]
                         for avhrr in avhrr_files:
-                            print("processing", avhrr)
                             passH = avhrr[-18:-16]  # hour
                             passM = avhrr[-16:-14]  # minute
                             dt = 'T'.join((dd, (passH + passM)))
@@ -159,22 +165,6 @@ def main(start, end, buoys, avgrad, sDir):
                         sat_data = np.array(fdf['avhrr_sst'])
                         [mbuoy, mavhrr, sdbuoy, sdavhrr, diff, rmse, n] = cf.statistics(buoy_data, sat_data)
 
-                        # add stats to bulk summary
-                        all_data['bdata'] = np.append(all_data['bdata'], buoy_data)
-                        all_data['avhrrdata'] = np.append(all_data['avhrrdata'], sat_data)
-                        if buoy not in all_data['buoys']:
-                            all_data['buoys'].append(buoy)
-
-                        try:
-                            monthly_data[month]
-                        except KeyError:
-                            monthly_data[month] = dict(bdata=np.array([]), avhrrdata=np.array([]), buoys=[])
-                        monthly_data[month]['bdata'] = np.append(monthly_data[month]['bdata'], buoy_data)
-                        monthly_data[month]['avhrrdata'] = np.append(monthly_data[month]['avhrrdata'], sat_data)
-
-                        if buoy not in monthly_data[month]['buoys']:
-                            monthly_data[month]['buoys'].append(buoy)
-
                         # add monthly stats to summary
                         diffx = [round(x, 2) for x in diff]
                         summary.append(
@@ -183,7 +173,24 @@ def main(start, end, buoys, avgrad, sDir):
                              np.nanmean(abs(diff)), np.std(abs(diff)), np.percentile(abs(diff), 25),
                              np.percentile(abs(diff), 50), np.percentile(abs(diff), 75), diffx])
 
-                        save_dir = os.path.join(sDir, 'AVHRR_individual_passes', buoy)
+                        # add stats to bulk summary, only if the monthly sample size is >3
+                        if len(fdf) > 3:
+                            all_data['bdata'] = np.append(all_data['bdata'], buoy_data)
+                            all_data['avhrrdata'] = np.append(all_data['avhrrdata'], sat_data)
+                            if buoy not in all_data['buoys']:
+                                all_data['buoys'].append(buoy)
+
+                            try:
+                                monthly_data[month]
+                            except KeyError:
+                                monthly_data[month] = dict(bdata=np.array([]), avhrrdata=np.array([]), buoys=[])
+                            monthly_data[month]['bdata'] = np.append(monthly_data[month]['bdata'], buoy_data)
+                            monthly_data[month]['avhrrdata'] = np.append(monthly_data[month]['avhrrdata'], sat_data)
+
+                            if buoy not in monthly_data[month]['buoys']:
+                                monthly_data[month]['buoys'].append(buoy)
+
+                        save_dir = os.path.join(save_dir_all, buoy)
                         cf.create_dir(save_dir)
                         sname = '{}_sst_comparison_{}_AVHRR'.format(buoy, t1.strftime('%Y%m'))
                         fig, ax = plt.subplots()
@@ -197,7 +204,7 @@ def main(start, end, buoys, avgrad, sDir):
                         pf.save_fig(save_dir, sname)
 
     sdf = pd.DataFrame(summary, columns=sheaders)
-    sdf.to_csv('{}/{}/AVHRR_buoy_comparison.csv'.format(sDir, 'AVHRR_individual_passes'), index=False)
+    sdf.to_csv('{}/AVHRR_buoy_comparison.csv'.format(save_dir_all), index=False)
 
     stats = []
     [__, __, __, __, diff, rmse, n] = cf.statistics(all_data['bdata'], all_data['avhrrdata'])
@@ -222,16 +229,19 @@ def main(start, end, buoys, avgrad, sDir):
                      'sd_abs_diff', 'q1_abs_diff', 'median_abs_diff', 'q3_abs_diff', 'RMSE', 'n', 'buoys']
     statsdf = pd.DataFrame(stats, columns=stats_headers)
     statsdf.sort_values('year-month', inplace=True)
-    statsdf.to_csv('{}/{}/AVHRR_buoy_comparison_overallstats.csv'.format(sDir, 'AVHRR_individual_passes'), index=False)
+    statsdf.to_csv('{}/AVHRR_buoy_comparison_overallstats.csv'.format(save_dir_all), index=False)
 
 
 if __name__ == '__main__':
     pd.set_option('display.width', 320, "display.max_columns", 10)  # for display in pycharm console
-    start = '6-1-2015'
-    end = '5-31-2016'
-    buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
-             '44017', '44018', '44020', '44025', '44027', '44065']
+    #start = '6-1-2015'
+    #end = '5-31-2016'
+    start = '1-1-2018'
+    end = '12-31-2018'
+    # buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
+    #          '44017', '44018', '44020', '44025', '44027', '44065']
+    buoys = ['44009', '44017', '44065']  # buoys in upwelling zone
     avgrad = 'closestwithin5'
-    #sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp'
-    sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp'  # boardwalk
+    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190501/2018_analysis/'
+    #sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp'  # boardwalk
     main(start, end, buoys, avgrad, sDir)
