@@ -82,8 +82,12 @@ def append_satellite_sst_data(sat_nc_file, buoylat, buoylon, radius, method, sst
                 dist = np.float(radius.split('closestwithin')[-1])
                 dist_satsst = satsst.values[d <= dist]
                 if check_nans(dist_satsst) == 'valid':
-                    d[np.isnan(satsst.values)] = np.nan  # turn distance to nan if the value at that location is nan
-                    value = np.nanmean(satsst.values[d == np.nanmin(d)])
+                    if 1 - (np.sum(np.isnan(dist_satsst)) / len(dist_satsst)) < .05:  # if the coverage is <5%, return nan
+                        value = np.nan
+                    else:
+                        d[np.isnan(satsst.values)] = np.nan  # turn distance to nan if the value at that location is nan
+                        # take the average on the off chance that the distance is exactly the same for >1 pixel
+                        value = np.nanmean(satsst.values[d == np.nanmin(d)])
                 else:
                     value = np.nan
 
