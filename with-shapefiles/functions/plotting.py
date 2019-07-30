@@ -3,7 +3,7 @@
 import os
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-import cmocean.cm as cmo
+#import cmocean.cm as cmo
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib.dates as mdates

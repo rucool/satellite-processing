@@ -26,8 +26,16 @@ H1_lst = [20, 20, 20, 22, 22, 23, 23, 23, 21, 20, 20, 20]
 template_file = '/Users/lgarzio/Documents/rucool/satellite/coldest_pixel/wrf_9km_template.nc'
 avhrr_dir = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/avhrr_nc/'
 out_dir = '/Users/lgarzio/Documents/rucool/satellite/coldest_pixel/daily_avhrr/composites'
-start_date = datetime(2013, 9, 1)
-end_date = datetime(2018, 9, 20)
+#start_date = datetime(2013, 9, 1)
+#end_date = datetime(2018, 9, 20)
+#template_file = '/home/lgarzio/rucool/satellite/coldest_pixel/wrf_9km_template.nc'
+#avhrr_dir = '/home/coolgroup/bpu/wrf/data/avhrr_nc/'
+#out_dir = '/home/lgarzio/rucool/satellite/coldest_pixel/daily_avhrr/composites'
+#start_date = datetime(2016, 1, 1)
+#end_date = datetime(2017, 1, 1)
+
+start_date = datetime(2013, 12, 13)
+end_date = datetime(2013, 12, 14)
 
 for n in range(int((end_date - start_date).days)):
     d = start_date + timedelta(n)

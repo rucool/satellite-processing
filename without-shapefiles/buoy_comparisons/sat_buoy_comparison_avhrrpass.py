@@ -234,14 +234,15 @@ def main(start, end, buoys, avgrad, sDir):
 
 if __name__ == '__main__':
     pd.set_option('display.width', 320, "display.max_columns", 10)  # for display in pycharm console
-    #start = '6-1-2015'
-    #end = '5-31-2016'
-    start = '1-1-2018'
-    end = '12-31-2018'
-    # buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
-    #          '44017', '44018', '44020', '44025', '44027', '44065']
-    buoys = ['44009', '44017', '44065']  # buoys in upwelling zone
+    start = '6-1-2015'
+    end = '5-31-2016'
+    # start = '1-1-2018'
+    # end = '12-31-2018'
+    buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
+             '44017', '44018', '44020', '44025', '44027', '44065']
+    #buoys = ['44008', '44009', '44014', '44017', '44020', '44025', '44065']  # Mid-Atlantic buoys
+    #buoys = ['44009', '44017', '44065']  # buoys in upwelling zone
     avgrad = 'closestwithin5'
-    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190501/2018_analysis/'
+    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190501/NREL_timeperiod_n3/'
     #sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp'  # boardwalk
     main(start, end, buoys, avgrad, sDir)

@@ -39,8 +39,10 @@ def plotMap(figname, figtitle, data):
 
 rootdir = '/Users/lgarzio/Documents/rucool/satellite/coldest_pixel/daily_avhrr/composites'
 sDir = '/Users/lgarzio/Documents/rucool/satellite/coldest_pixel/daily_avhrr/plots'
-start_date = datetime(2015, 9, 28)   # datetime(2015, 7, 1)
-end_date = datetime(2015, 9, 29)  # datetime(2016, 7, 1)
+#rootdir = '/home/lgarzio/rucool/satellite/coldest_pixel/daily_avhrr/composites'
+#sDir = '/home/lgarzio/rucool/satellite/coldest_pixel/daily_avhrr/plots'
+start_date = datetime(2013, 12, 13)   # datetime(2015, 7, 1)
+end_date = datetime(2013, 12, 14)  # datetime(2016, 7, 1)
 
 for n in range(int((end_date - start_date).days)):
     d = start_date + timedelta(n)

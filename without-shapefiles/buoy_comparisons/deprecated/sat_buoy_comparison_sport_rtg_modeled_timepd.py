@@ -130,8 +130,8 @@ def main(start, end, buoys, avgrad, sDir):
     monthly_data_rtg = {}
     for buoy in buoys:
         print(buoy)
-        start_dates = [start]
-        end_dates = [end]
+        #start_dates = [start]
+        #end_dates = [end]
 
         dt_start = datetime.strptime(start, '%m-%d-%Y')
         dt_end = datetime.strptime(end, '%m-%d-%Y')
@@ -221,7 +221,7 @@ def main(start, end, buoys, avgrad, sDir):
                                     if file.startswith('rtg_sst_grb') and file.endswith('{}.nc'.format(dd)):
                                         rtg_files.append(os.path.join(rtg_dir, file))
                                 if len(rtg_files) == 1:
-                                    svalue = cf.append_satellite_sst_data(rtg_files[0], buoylat, buoylon, avgrad, 'rtg',
+                                    svalue = cf.append_satellite_sst_data(rtg_files[0], buoylat, buoylon, 'closest', 'rtg',
                                                                           'TMP_173_SFC')
                                     sat_data_rtg['sst'] = np.append(sat_data_rtg['sst'], np.repeat(svalue, np.sum(mask)))
                                     sat_data_rtg['t'] = np.append(sat_data_rtg['t'], np.repeat(fmdt, np.sum(mask)))
@@ -275,6 +275,6 @@ if __name__ == '__main__':
     #          '44017', '44018', '44020', '44025', '44027', '44065']
     buoys = ['44009', '44017', '44065']  # buoys in upwelling zone
     avgrad = 'closestwithin5'
-    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp'
+    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190708'
     #sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp'  # boardwalk
     main(start, end, buoys, avgrad, sDir)

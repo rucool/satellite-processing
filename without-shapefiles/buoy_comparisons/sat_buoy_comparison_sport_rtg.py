@@ -132,8 +132,8 @@ def plot_sport(axis, x, y, rmse, n):
 
 
 def main(start, end, buoys, avgrad, sDir, group):
-    #bpudatadir = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/'
-    bpudatadir = '/home/coolgroup/bpu/wrf/data/'  # boardwalk
+    bpudatadir = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/'
+    #bpudatadir = '/home/coolgroup/bpu/wrf/data/'  # boardwalk
     models = ['sport', 'rtg', 'avhrr']
 
     summary_sport = []
@@ -317,7 +317,7 @@ if __name__ == '__main__':
     # buoys = ['44009', '44017', '44025', '44065']  # New York Bight buoys
     # buoys = ['44009', '44017', '44065']  # buoys in upwelling zone
     avgrad = 'closestwithin5'
-    #sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190729'
-    sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp/20190729/monthly'  # boardwalk
+    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190729'
+    #sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp/20190729/monthly'  # boardwalk
     grouping = 'monthly'  # options: 'monthly' or 'season' if season - need to define in lines 156-157
     main(start, end, buoys, avgrad, sDir, grouping)

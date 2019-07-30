@@ -45,12 +45,14 @@ def plotMap(figname, figtitle, latdata, londata, data, lease_area, plan_area, bl
     divider = make_axes_locatable(ax)
     cax = divider.new_horizontal(size='5%', pad=0.1, axes_class=plt.Axes)
     fig.add_axes(cax)
-    h = ax.pcolor(londata, latdata, data, vmin=18, vmax=26, cmap='jet')
+    h = ax.pcolor(londata, latdata, data, vmin=20, vmax=26, cmap='jet')
     plt.rcParams.update({'font.size': 14})
     cb = plt.colorbar(h, cax=cax, label='Temperature ($^\circ$C)')
     cb.ax.tick_params(labelsize=14)
 
+    #ax = pf.add_map_features(ax, axes_limits=[-76, -68, 36, 42], land_options=['face', 'gainsboro'])
     ax = pf.add_map_features(ax, land_options=['face', 'gainsboro'])
+    #ax = pf.add_map_features(ax, axes_limits=[-75.5, -73.2, 38.5, 40.7], land_options=['face', 'gainsboro'])
 
     lease_area.plot(ax=ax, color='none', edgecolor='black')
     plan_area.plot(ax=ax, color='none', edgecolor='dimgray')
@@ -64,12 +66,14 @@ def plotMap(figname, figtitle, latdata, londata, data, lease_area, plan_area, bl
 
 
 model = ['nam', 'avhrr1', 'avhrr3', 'rtg', 'gfs']
-sDir = '/Users/lgarzio/Documents/rucool/satellite/201607_upwelling_analysis'
+#model = ['avhrr1']
+sDir = '/Users/lgarzio/Documents/rucool/satellite/test'
 #rootdir = '/home/lgarzio/rucool/satellite/coldest_pixel/daily_avhrr/composites'
 #sDir = '/home/lgarzio/rucool/satellite/coldest_pixel/daily_avhrr/plots'
-start_date = datetime(2016, 7, 22)   # datetime(2015, 7, 1)
-end_date = datetime(2016, 7, 25)  # datetime(2016, 7, 1)
+start_date = datetime(2015, 7, 31)   # datetime(2015, 7, 1)
+end_date = datetime(2015, 8, 6)  # datetime(2016, 7, 1)
 buoys = ['44009', '44025', '44065']
+#buoys = ['44008', '44009', '44014', '44017', '44020', '44025', '44065']  # Mid-Atlantic buoys
 
 #boem_rootdir = '/home/coolgroup/bpu/mapdata/shapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018'
 boem_rootdir = '/Users/lgarzio/Documents/rucool/satellite/BOEMshapefiles/BOEM_Renewable_Energy_Areas_Shapefiles_10_24_2018'
@@ -82,6 +86,9 @@ for n in range(int((end_date - start_date).days)):
     var_names = ['TMP_P0_L1_GLC0', 'sst', 'sst', 'TMP_173_SFC', 'TMP_P0_L1_GLL0']
     lat_names = ['gridlat_0', 'lat', 'lat', 'lat_173', 'lat_0']
     lon_names = ['gridlon_0', 'lon', 'lon', 'lon_173', 'lon_0']
+    # var_names = ['TMP_173_SFC']
+    # lat_names = ['lat_173']
+    # lon_names = ['lon_173']
     for i in range(len(model)):
         ff = get_files(model[i], dt)
         if len(ff) == 1:

@@ -81,16 +81,16 @@ def main(sdf, statsdf, sDir, model):
     pf.save_fig(sDir, sname)
 
     # plot monthly SST difference between buoy and satellite
-    median_diff = statsdf['median_diff'][:-1]
+    bias = statsdf['bias (mean_diff)'][:-1]
     q1 = statsdf['q1_diff'][:-1]
     q3 = statsdf['q3_diff'][:-1]
     fig, ax = plt.subplots()
-    ax.plot(x, median_diff, '.', markersize=6, color='black', linestyle='-', label='Median')
+    ax.plot(x, bias, '.', markersize=6, color='black', linestyle='-', label='Bias')
     ax.fill_between(np.array(x), q1, q3, color='lightgray', label='Q1 to Q3')
     ax.legend(loc='best', fontsize=legend_fontsize)
     ax.axhline(linestyle='--', lw=1)
 
-    ax.set_ylabel('Median SST Difference', fontsize=ylabel_size)
+    ax.set_ylabel('Bias', fontsize=ylabel_size)
     if model == 'AVHRR':
         #ttl = '{} individual passes minus buoy SST:\nMedian Monthly Difference with Quartiles'.format(model)
         ttl = '{} Passes Minus Buoy SST'.format(model)
@@ -99,19 +99,19 @@ def main(sdf, statsdf, sDir, model):
         ttl = '{} Minus Buoy SST'.format(model)
     plt.title(ttl, fontsize=ttl_size)
     pf.format_date_axis_month(ax, fig)
-    plt.ylim([-1.5, 1.5])
+    plt.ylim([-1, 1])
     plt.yticks(fontsize=tick_size)
     plt.xticks(fontsize=tick_size)
-    sname = '{}_buoy_monthly_median_difference'.format(model)
+    sname = '{}_buoy_monthly_bias'.format(model)
     pf.save_fig(sDir, sname)
 
 
 if __name__ == '__main__':
-    # sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/AVHRR_individual_passes'
+    # sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190503/NREL/AVHRR_individual_passes'
     # sdf = pd.read_csv(os.path.join(sDir, 'AVHRR_buoy_comparison.csv'))
     # statsdf = pd.read_csv(os.path.join(sDir, 'AVHRR_buoy_comparison_overallstats.csv'))
-    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/sport_rtg_future_comparison'
-    sdf = pd.read_csv(os.path.join(sDir, 'rtg_buoy_futurecomparison.csv'))
+    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190708/2015-2016/seasons/NYBbuoys/sport_rtg_comparison'
+    sdf = pd.read_csv(os.path.join(sDir, 'rtg_buoy_comparison.csv'))
     statsdf = pd.read_csv(os.path.join(sDir, 'rtg_buoy_overallstats.csv'))
-    model = 'RTG'  # 'AVHRR' 'SPoRT' 'RTG'
+    model = 'RTG'  # 'AVHRR' 'SPoRT' 'RTG' 'ColdPix'
     main(sdf, statsdf, sDir, model)

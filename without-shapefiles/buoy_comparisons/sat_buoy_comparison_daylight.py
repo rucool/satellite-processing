@@ -111,6 +111,14 @@ def main(start, end, buoys, avgrad, models, sDir):
 
                 # define array of times
                 times = pd.to_datetime(np.arange(t0, t1+timedelta(days=1), timedelta(days=1)))
+
+                #upwelling events only
+                times = [datetime(2016, 7, 4), datetime(2016, 7, 5), datetime(2016, 7, 6), datetime(2016, 7, 8),
+                         datetime(2016, 7, 9), datetime(2016, 7, 10), datetime(2016, 7, 11), datetime(2016, 7, 12),
+                         datetime(2016, 7, 19), datetime(2016, 7, 20), datetime(2016, 7, 21), datetime(2016, 7, 22),
+                         datetime(2016, 7, 23), datetime(2016, 7, 24), datetime(2016, 7, 26), datetime(2016, 7, 27),
+                         datetime(2016, 7, 28), datetime(2016, 7, 29), datetime(2016, 7, 30)]
+
                 month = t0.strftime('%Y%m')
                 H0 = H0_lst[t0.month - 1]
                 H1 = H1_lst[t0.month - 1]
@@ -166,7 +174,7 @@ def main(start, end, buoys, avgrad, models, sDir):
                                 if file.startswith('rtg_sst_grb') and file.endswith('{}.nc'.format(dd)):
                                     rtg_files.append(os.path.join(rtg_dir, file))
                             if len(rtg_files) == 1:
-                                svalue = cf.append_satellite_sst_data(rtg_files[0], buoylat, buoylon, avgrad, 'rtg',
+                                svalue = cf.append_satellite_sst_data(rtg_files[0], buoylat, buoylon, 'closest', 'rtg',
                                                                       'TMP_173_SFC')
                                 sat_data['sst'] = np.append(sat_data['sst'], svalue)
                                 sat_data['t'] = np.append(sat_data['t'], fmtm)
@@ -268,11 +276,12 @@ if __name__ == '__main__':
     # end = '5-31-2016'
     start = '1-1-2018'
     end = '12-31-2018'
-    buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
-             '44017', '44018', '44020', '44025', '44027', '44065']
-    #buoys = ['44009', '44017', '44065']  # buoys in upwelling zone
+    # buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
+    #          '44017', '44018', '44020', '44025', '44027', '44065']
+    #buoys = ['44008', '44009', '44014', '44017', '44020', '44025', '44065']  # Mid-Atlantic buoys
+    buoys = ['44009', '44017', '44065']  # buoys in upwelling zone
     avgrad = 'closestwithin5'
-    models = ['coldestpix', 'rtg']  # ['coldestpix', 'sport', 'rtg']
-    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190501/2018_analysis/'
+    models = ['rtg']  # ['coldestpix', 'sport', 'rtg']
+    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190501/upwelling_events/'
     #sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp'  # boardwalk
     main(start, end, buoys, avgrad, models, sDir)

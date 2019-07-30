@@ -8,7 +8,6 @@ import xarray as xr
 import requests
 import re
 import itertools
-import geopandas as gpd
 
 
 def append_satellite_sst_data(sat_nc_file, buoylat, buoylon, radius, method, sst_varname):
@@ -96,17 +95,6 @@ def append_satellite_sst_data(sat_nc_file, buoylat, buoylon, radius, method, sst
 
     satdata.close()
     return value
-
-
-def boem_shapefiles(boem_rootdir):
-    shape_file_lease = os.path.join(boem_rootdir, 'BOEM_Lease_Areas_10_24_2018.shp')
-    shape_file_plan = os.path.join(boem_rootdir, 'BOEM_Wind_Planning_Areas_10_24_2018.shp')
-    leasing_areas = gpd.read_file(shape_file_lease)
-    leasing_areas = leasing_areas.to_crs(crs={'init': 'epsg:4326'})
-    planning_areas = gpd.read_file(shape_file_plan)
-    planning_areas = planning_areas.to_crs(crs={'init': 'epsg:4326'})
-
-    return leasing_areas, planning_areas
 
 
 def check_nans(data_array):

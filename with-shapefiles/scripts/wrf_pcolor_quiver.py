@@ -10,6 +10,7 @@ import os
 import glob
 from datetime import datetime
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import cartopy.crs as ccrs
 import xarray as xr
 from oceans.ocfis import uv2spdir, spdir2uv
@@ -44,8 +45,9 @@ def plot_pcolor_power(save_file, figtitle, latdata, londata, wnd_power, lease_ar
     plt.subplots_adjust(right=0.87)
     plt.title(figtitle, fontsize=17)
 
-    if diff_plot == 'diff_plot':
-        h = ax.pcolor(londata, latdata, wnd_power, vmin=-8000, vmax=8000, cmap=cmo.curl)
+    if diff_plot == 'yes':
+        #h = ax.pcolor(londata, latdata, wnd_power, vmin=-8000, vmax=8000, cmap=cmo.curl)
+        h = ax.pcolor(londata, latdata, wnd_power, norm=colors.SymLogNorm(linthresh=0.5, linscale=0.5, vmin=-8000, vmax=8000), cmap=cmo.curl)
         cblabel = 'Estimated 8MW Wind Power Difference (kW)'
     else:
         h = ax.pcolor(londata, latdata, wnd_power, cmap='OrRd')
