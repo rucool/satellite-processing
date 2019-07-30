@@ -17,7 +17,7 @@ import functions.common as cf
 import functions.plotting as pf
 
 
-def combine_datasets(sat_data, buoy_full, all_data, buoy, monthly_data, month, summary):
+def combine_datasets(sat_data, buoy_full, all_data, buoy, monthly_data, month, summary, samplesize):
     sat_df = pd.DataFrame(data={'time': sat_data['t'], 'sat_sst': sat_data['sst']})
     sat_df = sat_df.dropna()
 
@@ -31,7 +31,8 @@ def combine_datasets(sat_data, buoy_full, all_data, buoy, monthly_data, month, s
         if len(df) > 0:
             bdata = np.array(df['buoy_sst'])
             sdata = np.array(df['sat_sst'])
-            if len(sdata) > 0:
+            # add stats to summaries only if it meets the sample size threshold
+            if len(sdata) > samplesize:
                 [mbuoy, msat, sdbuoy, sdsat, diff, rmse, n] = cf.statistics(bdata, sdata)
 
                 # add stats to bulk summary
@@ -55,11 +56,14 @@ def combine_datasets(sat_data, buoy_full, all_data, buoy, monthly_data, month, s
                 summary.append([buoy, month, mbuoy, sdbuoy, msat, sdsat, rmse, n,
                                 np.nanmean(diff), np.std(diff), np.percentile(diff, 25), np.percentile(diff, 50),
                                 np.percentile(diff, 75), diffx])
+
+            else:
+                rmse = None
+                n = len(df)
         else:
             df = []
             rmse = None
             n = None
-
     else:
         df = []
         rmse = None
@@ -98,6 +102,12 @@ def create_summary_output(summary, mod, all_data, monthly_data):
                    index=False)
 
 
+def plot_avhrr(axis, x, y, rmse, n):
+    axis.plot(x, y, 's', markerfacecolor='blue', markeredgecolor='blue', markersize=3.5,
+              lw=.75, label='Daily CP (RMSE={}, n={}'.format(rmse, n))
+    return axis
+
+
 def plot_buoy_full(axis, x, y, buoy):
     axis.plot(x, y, '.', markerfacecolor='grey', markeredgecolor='grey', markersize=1, label='Buoy {}'.format(buoy))
     return axis
@@ -105,18 +115,18 @@ def plot_buoy_full(axis, x, y, buoy):
 
 def plot_buoy_daily(axis, x, y):
     axis.plot(x, y, 'o', markerfacecolor='black', markeredgecolor='black',
-              markersize=4, color='black', lw=.75, label='Daily Buoy Mean')
+              markersize=3.5, color='black', lw=.75, label='Daily Buoy Mean')
     return axis
 
 
 def plot_rtg(axis, x, y, rmse, n):
-    axis.plot(x, y, 'o', markerfacecolor='green', markeredgecolor='green', markersize=4,
+    axis.plot(x, y, 'o', markerfacecolor='green', markeredgecolor='green', markersize=3.5,
               label='RTG (RMSE={}, n={})'.format(rmse, n))
     return axis
 
 
 def plot_sport(axis, x, y, rmse, n):
-    axis.plot(x, y, '^', markerfacecolor='red', markeredgecolor='red', markersize=4,
+    axis.plot(x, y, '^', markerfacecolor='red', markeredgecolor='red', markersize=3.5,
               label='SPoRT (RMSE={}, n={})'.format(rmse, n))
     return axis
 
@@ -124,19 +134,23 @@ def plot_sport(axis, x, y, rmse, n):
 def main(start, end, buoys, avgrad, sDir, group):
     #bpudatadir = '/Volumes/boardwalk/coolgroup/bpu/wrf/data/'
     bpudatadir = '/home/coolgroup/bpu/wrf/data/'  # boardwalk
-    models = ['sport', 'rtg']
+    models = ['sport', 'rtg', 'avhrr']
 
     summary_sport = []
     summary_rtg = []
+    summary_avhrr = []
     # for bulk stats
     all_data_sport = dict(bdata=np.array([]), satdata=np.array([]), buoys=[])
     all_data_rtg = dict(bdata=np.array([]), satdata=np.array([]), buoys=[])
+    all_data_avhrr = dict(bdata=np.array([]), satdata=np.array([]), buoys=[])
     monthly_data_sport = {}
     monthly_data_rtg = {}
+    monthly_data_avhrr = {}
     for buoy in buoys:
         print('\nBuoy {}'.format(buoy))
-        #start_dates = [start]
-        #end_dates = [end]
+        # start_dates = [start]
+        # end_dates = [end]
+        # sample_size = 4
 
         if group == 'monthly':
             sample_size = 4
@@ -195,7 +209,9 @@ def main(start, end, buoys, avgrad, sDir, group):
 
                 sat_data_sport = {'t': np.array([], dtype='datetime64[ns]'), 'sst': np.array([])}
                 sat_data_rtg = {'t': np.array([], dtype='datetime64[ns]'), 'sst': np.array([])}
+                sat_data_avhrr = {'t': np.array([], dtype='datetime64[ns]'), 'sst': np.array([])}
                 for tm in times:
+                    print(tm)
                     dd = datetime.strftime(tm, '%Y%m%d')
                     fmdt = np.datetime64(datetime.strptime(dd, '%Y%m%d'))
 
@@ -232,13 +248,31 @@ def main(start, end, buoys, avgrad, sDir, group):
                             else:
                                 print('{} files found for RTG at time {}'.format(str(len(rtg_files)), tm.strftime('%Y-%m-%d')))
 
+                        if model == 'avhrr':
+                            # daily AVHRR daily coldest pixel composite
+                            satfile = '{}daily_avhrr/composites/{}/avhrr_coldest-pixel_{}.nc'.format(bpudatadir,
+                                                                                                     tm.strftime('%Y'),
+                                                                                                     tm.strftime(
+                                                                                                         '%Y%m%d'))
+                            try:
+                                cvalue = cf.append_satellite_sst_data(satfile, buoylat, buoylon, avgrad, 'daily_avhrr',
+                                                                      'sst')
+                                sat_data_avhrr['sst'] = np.append(sat_data_avhrr['sst'], cvalue)
+                                sat_data_avhrr['t'] = np.append(sat_data_avhrr['t'], fmdt)
+                            except:
+                                print('Issue reading from {}'.format(satfile))
+
                 # merge SPoRT with buoy data
                 [df_sport, rmse_sport, n_sport] = combine_datasets(sat_data_sport, buoy_daily, all_data_sport, buoy,
-                                                                   monthly_data_sport, month, summary_sport)
+                                                                   monthly_data_sport, month, summary_sport, sample_size)
 
                 # merge RTG with buoy data
                 [df_rtg, rmse_rtg, n_rtg] = combine_datasets(sat_data_rtg, buoy_daily, all_data_rtg, buoy,
-                                                             monthly_data_rtg, month, summary_rtg)
+                                                             monthly_data_rtg, month, summary_rtg, sample_size)
+
+                # merge daily coldest pixel AVHRR with buoy data
+                [df_avhrr, rmse_avhrr, n_avhrr] = combine_datasets(sat_data_avhrr, buoy_daily, all_data_avhrr, buoy,
+                                                             monthly_data_avhrr, month, summary_avhrr, sample_size)
 
                 if len(df_sport) > 0 and len(df_rtg) > 0:
                     buoy_plot = pd.merge(df_sport, df_rtg, on=['time', 'buoy_sst'], how='outer')
@@ -259,6 +293,8 @@ def main(start, end, buoys, avgrad, sDir, group):
                     ax = plot_sport(ax, df_sport['time'] + timedelta(hours=12), df_sport['sat_sst'], rmse_sport, n_sport)
                 if len(df_rtg) > 0:
                     ax = plot_rtg(ax, df_rtg['time'] + timedelta(hours=12), df_rtg['sat_sst'], rmse_rtg, n_rtg)
+                if len(df_avhrr) > 0:
+                    ax = plot_avhrr(ax, df_avhrr['time'] + timedelta(hours=12), df_avhrr['sat_sst'], rmse_avhrr, n_avhrr)
                 ax.set_ylabel('Sea Surface Temperature (Celsius)', fontsize=8.5)
                 plt.title('Buoy {}'.format(buoy), fontsize=9)
                 pf.format_date_axis(ax, fig)
@@ -268,19 +304,20 @@ def main(start, end, buoys, avgrad, sDir, group):
 
     create_summary_output(summary_sport, 'sport', all_data_sport, monthly_data_sport)
     create_summary_output(summary_rtg, 'rtg', all_data_rtg, monthly_data_rtg)
+    create_summary_output(summary_avhrr, 'avhrr', all_data_avhrr, monthly_data_avhrr)
 
 
 if __name__ == '__main__':
     pd.set_option('display.width', 320, "display.max_columns", 10)  # for display in pycharm console
-    start = '6-1-2016'
-    end = '6-4-2016'
+    start = '12-1-2015'
+    end = '11-30-2016'
     # buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013',
     #          '44014', '44017', '44018', '44020', '44025', '44027', '44065']
-    # buoys = ['44008', '44009', '44014', '44017', '44020', '44025', '44065']  # Mid-Atlantic buoys
-    buoys = ['44009', '44017', '44025', '44065']  # New York Bight buoys
+    buoys = ['44008', '44009', '44014', '44017', '44020', '44025', '44065']  # Mid-Atlantic buoys
+    # buoys = ['44009', '44017', '44025', '44065']  # New York Bight buoys
     # buoys = ['44009', '44017', '44065']  # buoys in upwelling zone
     avgrad = 'closestwithin5'
-    #sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190708/allbuoys'
-    sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp/20190708/NYBbuoys'  # boardwalk
-    grouping = 'season'  # options: 'monthly' or 'season' if season - need to define in lines 156-157
+    #sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190729'
+    sDir = '/home/lgarzio/rucool/satellite/sst_buoy_comp/20190729/monthly'  # boardwalk
+    grouping = 'monthly'  # options: 'monthly' or 'season' if season - need to define in lines 156-157
     main(start, end, buoys, avgrad, sDir, grouping)
