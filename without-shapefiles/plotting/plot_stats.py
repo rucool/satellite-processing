@@ -39,6 +39,7 @@ def main(sdf, statsdf, sDir, model):
 
     x = statsdf['year-month'][:-1].map(lambda t: dt.datetime.strptime(str(t), '%Y%m'))
     monthly_rmse = statsdf['RMSE'][:-1]
+    monthly_n = statsdf['n'][:-1].tolist()
     ax.plot(x, monthly_rmse, '.', markersize=7, color='black', linestyle='-', lw=2, label='Overall')
 
     ax.set_ylabel('RMSE', fontsize=ylabel_size)
@@ -67,6 +68,10 @@ def main(sdf, statsdf, sDir, model):
     ax.plot(x, monthly_rmse, '.', markersize=6, color='black', linestyle='-', label='Overall')
     ax.fill_between(np.array(x), mdf['rmse_min'], mdf['rmse_max'], color='lightgray', label='Buoy Range')
 
+    # add sample sizes to graphs
+    for i, txt in enumerate(monthly_n):
+        ax.annotate(txt, (x[i], 0.1), ha='center', va='center', size=7)
+
     ax.set_ylabel('RMSE', fontsize=ylabel_size)
     ax.legend(loc='best', fontsize=legend_fontsize)
     if model == 'AVHRR':
@@ -87,6 +92,11 @@ def main(sdf, statsdf, sDir, model):
     fig, ax = plt.subplots()
     ax.plot(x, bias, '.', markersize=6, color='black', linestyle='-', label='Bias')
     ax.fill_between(np.array(x), q1, q3, color='lightgray', label='Q1 to Q3')
+
+    # add sample sizes to graphs
+    for i, txt in enumerate(monthly_n):
+        ax.annotate(txt, (x[i], -0.9), ha='center', va='center', size=7)
+
     ax.legend(loc='best', fontsize=legend_fontsize)
     ax.axhline(linestyle='--', lw=1)
 
@@ -110,7 +120,7 @@ if __name__ == '__main__':
     # sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190503/NREL/AVHRR_individual_passes'
     # sdf = pd.read_csv(os.path.join(sDir, 'AVHRR_buoy_comparison.csv'))
     # statsdf = pd.read_csv(os.path.join(sDir, 'AVHRR_buoy_comparison_overallstats.csv'))
-    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190708/2015-2016/seasons/NYBbuoys/sport_rtg_comparison'
+    sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190729/sport_rtg_comparison/monthly'
     sdf = pd.read_csv(os.path.join(sDir, 'rtg_buoy_comparison.csv'))
     statsdf = pd.read_csv(os.path.join(sDir, 'rtg_buoy_overallstats.csv'))
     model = 'RTG'  # 'AVHRR' 'SPoRT' 'RTG' 'ColdPix'
