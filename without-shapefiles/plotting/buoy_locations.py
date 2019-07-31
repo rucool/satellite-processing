@@ -17,9 +17,9 @@ sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp'
 # buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013', '44014',
 #          '44017', '44018', '44020', '44025', '44027', '44065']
 
-# buoys = ['44008', '44009', '44014', '44017', '44020', '44025', '44065']  # Mid-Atlantic buoys
+buoys = ['44008', '44009', '44014', '44017', '44025', '44065']  # Mid-Atlantic buoys
 
-buoys = ['44009', '44017', '44025', '44065']  # New York Bight buoys
+# buoys = ['44009', '44017', '44025', '44065']  # New York Bight buoys
 
 lats = []
 lons = []
@@ -35,14 +35,14 @@ for b in buoys:
 ax = plt.axes(projection=ccrs.PlateCarree())
 ax.coastlines(resolution='50m')
 
-#ax.set_extent([-76, -68, 36, 42])  # [min lon, max lon, min lat, max lat]
-ax.set_extent([-76, -70, 37, 42])  # [min lon, max lon, min lat, max lat]
+ax.set_extent([-76, -68, 36, 42])  # [min lon, max lon, min lat, max lat]
+#ax.set_extent([-76, -70, 37, 42])  # [min lon, max lon, min lat, max lat]
 
 gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=.5, color='gray', alpha=0.5, linestyle='--')
 gl.xlabels_top = False
 gl.ylabels_right = False
-gl.xlabel_style = {'size': 13}
-gl.ylabel_style = {'size': 13}
+gl.xlabel_style = {'size': 12}
+gl.ylabel_style = {'size': 12}
 land = cfeature.NaturalEarthFeature('physical', 'land', '10m', edgecolor='face', facecolor='gainsboro')
 ax.add_feature(land, zorder=5, edgecolor='black')
 ax.add_feature(cfeature.LAKES, zorder=8, facecolor='white')
@@ -74,4 +74,4 @@ for i, txt in enumerate(buoys):
     #ax.annotate(txt, (lons[i] + .2, lats[i] - .05), size=6)
     ax.annotate(txt, (lons[i] + .1, lats[i]), size=7)
 
-pf.save_fig(sDir, 'ndbc_buoy_locations_nyb')
+pf.save_fig(sDir, 'ndbc_buoy_locations_midatlantic')

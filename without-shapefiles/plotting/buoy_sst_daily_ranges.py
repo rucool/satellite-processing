@@ -111,8 +111,8 @@ def main(t0, t1, buoys, sDir, group):
     x = [dt.datetime.strptime(ym, '%Y%m') for ym in ym_list]
     ax.plot(x, sdf['mean_range'], '-o', markersize=2.5, linewidth=1)
     ax.fill_between(x, sdf['percentile5'], sdf['percentile95'], color='lightgray', label='95th percentile')
-    ax.set_ylabel('Mean SST Range (degrees C)', fontsize=9)
-    plt.title('Mean Monthly SST Range (95th percentile shaded)\nMid-Atlantic Buoys', fontsize=9)
+    ax.set_ylabel('Average SST Daily Range (degrees C)', fontsize=9)
+    plt.title('Monthly Average of Daily SST Range (95th percentile shaded)\nMid-Atlantic Buoys', fontsize=9)
     pf.format_date_axis_month(ax, fig)
     save_file = os.path.join(sDir, 'buoy_range_summary')
     fig.savefig(str(save_file), dpi=150)
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     end = dt.datetime(2016, 11, 30, 0, 0)
     # buoys = ['41001', '41002', '41004', '41008', '41013', '44005', '44007', '44008', '44009', '44011', '44013',
     #          '44014', '44017', '44018', '44020', '44025', '44027', '44065']
-    buoys = ['44008', '44009', '44014', '44017', '44020', '44025', '44065']  # Mid-Atlantic buoys
+    buoys = ['44008', '44009', '44014', '44017', '44025', '44065']  # Mid-Atlantic buoys
     # buoys = ['44009', '44017', '44025', '44065']  # New York Bight buoys
     # buoys = ['44009', '44017', '44065']  # buoys in upwelling zone
     sDir = '/Users/lgarzio/Documents/rucool/satellite/sst_buoy_comp/20190729/buoy_sst_range'
